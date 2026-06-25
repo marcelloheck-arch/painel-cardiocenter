@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cardiocenter — Painel de Atendimento</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --vermelho: #C0392B;
+    --vermelho-escuro: #96281B;
+    --verde: #1A7F4E;
+    --verde-escuro: #145E3A;
+    --cinza-claro: #F5F5F5;
+    --cinza-borda: #E0E0E0;
+    --texto: #1A1A1A;
+    --texto-suave: #666;
+    --branco: #FFFFFF;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--cinza-claro);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+  }
+
+  .logo {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--vermelho);
+    margin-bottom: 32px;
+    text-align: center;
+  }
+
+  .card {
+    background: var(--branco);
+    border-radius: 12px;
+    border: 1px solid var(--cinza-borda);
+    padding: 32px 28px;
+    width: 100%;
+    max-width: 380px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  }
+
+  .label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--texto-suave);
+    margin-bottom: 4px;
+  }
+
+  .paciente-nome {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--texto);
+    margin-bottom: 4px;
+  }
+
+  .paciente-tel {
+    font-size: 14px;
+    color: var(--texto-suave);
+    margin-bottom: 28px;
+  }
+
+  .divider {
+    border: none;
+    border-top: 1px solid var(--cinza-borda);
+    margin-bottom: 28px;
+  }
+
+  .resumo {
+    background: var(--cinza-claro);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 28px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--texto);
+  }
+
+  .resumo-linha { display: flex; gap: 8px; }
+  .resumo-campo { color: var(--texto-suave); min-width: 80px; }
+  .resumo-valor { font-weight: 500; }
+
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 20px;
+    margin-bottom: 24px;
+  }
+
+  .status-badge.agente {
+    background: #E8F5E9;
+    color: var(--verde);
+  }
+
+  .status-badge.humano {
+    background: #FDE8E8;
+    color: var(--vermelho);
+  }
+
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    margin-bottom: 12px;
+  }
+
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .btn-assumir {
+    background: var(--vermelho);
+    color: var(--branco);
+  }
+
+  .btn-assumir:hover:not(:disabled) { background: var(--vermelho-escuro); }
+
+  .btn-liberar {
+    background: var(--verde);
+    color: var(--branco);
+  }
+
+  .btn-liberar:hover:not(:disabled) { background: var(--verde-escuro); }
+
+  .btn-secundario {
+    background: transparent;
+    color: var(--texto-suave);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 10px;
+    margin-bottom: 0;
+    border: 1px solid var(--cinza-borda);
+  }
+
+  .feedback {
+    display: none;
+    text-align: center;
+    padding: 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 12px;
+  }
+
+  .feedback.sucesso {
+    background: #E8F5E9;
+    color: var(--verde);
+  }
+
+  .feedback.erro {
+    background: #FDE8E8;
+    color: var(--vermelho);
+  }
+
+  .rodape {
+    margin-top: 24px;
+    font-size: 11px;
+    color: var(--texto-suave);
+    text-align: center;
+  }
+
+  .spinner {
+    display: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin: 0 auto;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="logo">❤ Cardiocenter</div>
+
+<div class="card">
+  <div class="label">Pré-agendamento</div>
+  <div class="paciente-nome" id="nome-paciente">Carregando...</div>
+  <div class="paciente-tel" id="tel-paciente"></div>
+
+  <hr class="divider">
+
+  <div class="resumo" id="resumo-dados"></div>
+
+  <div id="status-badge" class="status-badge agente">
+    <span class="status-dot"></span>
+    <span id="status-texto">Agente respondendo</span>
+  </div>
+
+  <div class="feedback" id="feedback"></div>
+
+  <button class="btn btn-assumir" id="btn-assumir" onclick="acao('humano')">
+    Assumir atendimento
+  </button>
+
+  <button class="btn btn-liberar" id="btn-liberar" onclick="acao('livre')" style="display:none">
+    Liberar para o agente
+  </button>
+
+  <button class="btn btn-secundario" onclick="abrirWhatsApp()">
+    Abrir conversa no WhatsApp
+  </button>
+</div>
+
+<div class="rodape">Painel interno · Cardiocenter</div>
+
+<script>
+  // ─── CONFIGURAÇÃO ───────────────────────────────────────────
+  // Substitua pela URL do webhook do seu N8N
+  const WEBHOOK_URL = 'https://SEU-N8N.cloudfy.live/webhook/controle-painel';
+  // ────────────────────────────────────────────────────────────
+
+  const params = new URLSearchParams(window.location.search);
+  const telefone = params.get('tel') || '';
+  const nome     = params.get('nome') || 'Paciente';
+  const servico  = params.get('servico') || '';
+  const medico   = params.get('medico') || '';
+  const convenio = params.get('convenio') || '';
+  const preferencia = params.get('preferencia') || '';
+
+  let estadoAtual = 'agente'; // 'agente' ou 'humano'
+
+  // Preenche os dados na tela
+  document.getElementById('nome-paciente').textContent = nome;
+  document.getElementById('tel-paciente').textContent = telefone.replace(/^55/, '+55 ');
+
+  const resumoEl = document.getElementById('resumo-dados');
+  const linhas = [
+    ['Serviço', servico],
+    ['Médico', medico],
+    ['Convênio', convenio],
+    ['Preferência', preferencia],
+  ];
+  resumoEl.innerHTML = linhas.filter(([,v]) => v).map(([c, v]) =>
+    `<div class="resumo-linha"><span class="resumo-campo">${c}</span><span class="resumo-valor">${v}</span></div>`
+  ).join('');
+
+  function atualizaEstado(estado) {
+    estadoAtual = estado;
+    const badge  = document.getElementById('status-badge');
+    const texto  = document.getElementById('status-texto');
+    const btnA   = document.getElementById('btn-assumir');
+    const btnL   = document.getElementById('btn-liberar');
+
+    if (estado === 'humano') {
+      badge.className  = 'status-badge humano';
+      texto.textContent = 'Você está atendendo';
+      btnA.style.display = 'none';
+      btnL.style.display = 'block';
+    } else {
+      badge.className  = 'status-badge agente';
+      texto.textContent = 'Agente respondendo';
+      btnA.style.display = 'block';
+      btnL.style.display = 'none';
+    }
+  }
+
+  function mostraFeedback(msg, tipo) {
+    const el = document.getElementById('feedback');
+    el.textContent = msg;
+    el.className = `feedback ${tipo}`;
+    el.style.display = 'block';
+    setTimeout(() => { el.style.display = 'none'; }, 3000);
+  }
+
+  async function acao(comando) {
+    const btn = document.getElementById(comando === 'humano' ? 'btn-assumir' : 'btn-liberar');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner" style="display:block"></div>';
+
+    try {
+      const resp = await fetch(WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ comando, telefone, nome })
+      });
+
+      if (resp.ok) {
+        atualizaEstado(comando === 'humano' ? 'humano' : 'agente');
+        mostraFeedback(
+          comando === 'humano'
+            ? 'Atendimento assumido. O agente está pausado.'
+            : 'Paciente liberado. O agente voltará a responder.',
+          'sucesso'
+        );
+      } else {
+        throw new Error('Falha na resposta');
+      }
+    } catch (e) {
+      mostraFeedback('Erro ao processar. Tente novamente.', 'erro');
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = comando === 'humano' ? 'Assumir atendimento' : 'Liberar para o agente';
+  }
+
+  function abrirWhatsApp() {
+    const tel = telefone.replace(/\D/g, '');
+    window.open(`https://wa.me/${tel}`, '_blank');
+  }
+</script>
+
+</body>
+</html>
