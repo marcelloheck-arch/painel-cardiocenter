@@ -373,6 +373,7 @@
 
   .toast.sucesso { background: var(--verde); }
   .toast.erro { background: var(--vermelho); }
+  .toast.aviso { background: var(--amarelo); color: var(--preto); }
 </style>
 </head>
 <body>
@@ -573,16 +574,33 @@ function criarCard(a) {
 }
 
 async function assumir(id) {
+  // Desabilita o botão imediatamente para evitar duplo clique
+  const card = document.getElementById('card-' + id);
+  if (card) {
+    const btn = card.querySelector('.btn-assumir');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Verificando...';
+    }
+  }
+
   try {
-    await fetch(WEBHOOK_URL, {
+    const res = await fetch(WEBHOOK_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ acao: 'assumir', id })
     });
-    mostrarToast('Atendimento assumido!', 'sucesso');
+    const data = await res.json();
+
+    if (data.success) {
+      mostrarToast('✅ Atendimento assumido com sucesso!', 'sucesso');
+    } else {
+      mostrarToast('⚠️ ' + data.mensagem, 'erro');
+    }
     await carregarAgendamentos();
   } catch (e) {
     mostrarToast('Erro ao assumir. Tente novamente.', 'erro');
+    await carregarAgendamentos();
   }
 }
 
