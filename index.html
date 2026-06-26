@@ -5,334 +5,615 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cardiocenter — Painel de Atendimento</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
     --vermelho: #C0392B;
     --vermelho-escuro: #96281B;
-    --verde: #1A7F4E;
-    --verde-escuro: #145E3A;
-    --cinza-claro: #F5F5F5;
-    --cinza-borda: #E0E0E0;
-    --texto: #1A1A1A;
-    --texto-suave: #666;
+    --vermelho-claro: #FADBD8;
+    --cinza-fundo: #F4F6F8;
+    --cinza-borda: #DDE1E7;
+    --cinza-texto: #6B7280;
+    --preto: #1A1A2E;
     --branco: #FFFFFF;
+    --verde: #27AE60;
+    --verde-claro: #D5F5E3;
+    --amarelo: #F39C12;
+    --amarelo-claro: #FDEBD0;
+    --azul: #2980B9;
+    --azul-claro: #D6EAF8;
   }
 
   body {
     font-family: 'Inter', sans-serif;
-    background: var(--cinza-claro);
+    background: var(--cinza-fundo);
+    color: var(--preto);
     min-height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--branco);
+    border-bottom: 3px solid var(--vermelho);
+    padding: 0 32px;
+    height: 64px;
     display: flex;
-    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    padding: 24px 16px;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
   }
 
   .logo {
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--vermelho);
-    margin-bottom: 32px;
-    text-align: center;
+    display: flex;
+    align-items: center;
+    gap: 10px;
   }
 
-  .card {
-    background: var(--branco);
-    border-radius: 12px;
-    border: 1px solid var(--cinza-borda);
-    padding: 32px 28px;
-    width: 100%;
-    max-width: 380px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-  }
-
-  .label {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--texto-suave);
-    margin-bottom: 4px;
-  }
-
-  .paciente-nome {
-    font-size: 20px;
-    font-weight: 600;
-    color: var(--texto);
-    margin-bottom: 4px;
-  }
-
-  .paciente-tel {
-    font-size: 14px;
-    color: var(--texto-suave);
-    margin-bottom: 28px;
-  }
-
-  .divider {
-    border: none;
-    border-top: 1px solid var(--cinza-borda);
-    margin-bottom: 28px;
-  }
-
-  .resumo {
-    background: var(--cinza-claro);
+  .logo-icone {
+    width: 36px;
+    height: 36px;
+    background: var(--vermelho);
     border-radius: 8px;
-    padding: 16px;
-    margin-bottom: 28px;
-    font-size: 13px;
-    line-height: 1.7;
-    color: var(--texto);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 18px;
   }
 
-  .resumo-linha { display: flex; gap: 8px; }
-  .resumo-campo { color: var(--texto-suave); min-width: 80px; }
-  .resumo-valor { font-weight: 500; }
+  .logo-texto {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--preto);
+    letter-spacing: -0.3px;
+  }
 
-  .status-badge {
-    display: inline-flex;
+  .logo-sub {
+    font-size: 12px;
+    color: var(--cinza-texto);
+    font-weight: 400;
+  }
+
+  .header-direita {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .btn-atualizar {
+    background: var(--cinza-fundo);
+    border: 1px solid var(--cinza-borda);
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--cinza-texto);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s;
+  }
+
+  .btn-atualizar:hover { background: var(--cinza-borda); color: var(--preto); }
+
+  .status-online {
+    display: flex;
     align-items: center;
     gap: 6px;
     font-size: 12px;
-    font-weight: 600;
-    padding: 4px 12px;
-    border-radius: 20px;
-    margin-bottom: 24px;
-  }
-
-  .status-badge.agente {
-    background: #E8F5E9;
     color: var(--verde);
+    font-weight: 500;
   }
 
-  .status-badge.humano {
-    background: #FDE8E8;
-    color: var(--vermelho);
-  }
-
-  .status-dot {
-    width: 7px;
-    height: 7px;
+  .dot-online {
+    width: 8px;
+    height: 8px;
+    background: var(--verde);
     border-radius: 50%;
-    background: currentColor;
+    animation: pulsar 2s infinite;
+  }
+
+  @keyframes pulsar {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* CONTADORES */
+  .contadores {
+    display: flex;
+    gap: 16px;
+    padding: 24px 32px 0;
+  }
+
+  .contador-card {
+    background: var(--branco);
+    border-radius: 12px;
+    padding: 16px 24px;
+    border: 1px solid var(--cinza-borda);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 180px;
+  }
+
+  .contador-icone {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+  }
+
+  .contador-icone.pendente { background: var(--amarelo-claro); }
+  .contador-icone.atendimento { background: var(--azul-claro); }
+  .contador-icone.concluido { background: var(--verde-claro); }
+
+  .contador-numero {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .contador-label {
+    font-size: 12px;
+    color: var(--cinza-texto);
+    margin-top: 2px;
+  }
+
+  /* FILTROS */
+  .filtros {
+    display: flex;
+    gap: 8px;
+    padding: 20px 32px 0;
+  }
+
+  .filtro-btn {
+    padding: 8px 18px;
+    border-radius: 20px;
+    border: 1.5px solid var(--cinza-borda);
+    background: var(--branco);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--cinza-texto);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .filtro-btn:hover, .filtro-btn.ativo {
+    background: var(--vermelho);
+    border-color: var(--vermelho);
+    color: white;
+  }
+
+  /* LISTA */
+  .lista {
+    padding: 20px 32px 32px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 16px;
+  }
+
+  /* CARD */
+  .card {
+    background: var(--branco);
+    border-radius: 14px;
+    border: 1.5px solid var(--cinza-borda);
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+  }
+
+  .card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+
+  .card.pendente { border-left: 4px solid var(--amarelo); }
+  .card.em_atendimento { border-left: 4px solid var(--azul); }
+  .card.concluido { border-left: 4px solid var(--verde); opacity: 0.75; }
+
+  .card-header {
+    padding: 16px 20px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 1px solid var(--cinza-fundo);
+  }
+
+  .card-nome {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--preto);
+  }
+
+  .card-data {
+    font-size: 11px;
+    color: var(--cinza-texto);
+    margin-top: 2px;
+  }
+
+  .badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+
+  .badge.pendente { background: var(--amarelo-claro); color: #7D6608; }
+  .badge.em_atendimento { background: var(--azul-claro); color: #1A5276; }
+  .badge.concluido { background: var(--verde-claro); color: #1D6A39; }
+
+  .card-body {
+    padding: 14px 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .campo {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .campo-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--cinza-texto);
+  }
+
+  .campo-valor {
+    font-size: 13px;
+    color: var(--preto);
+    font-weight: 500;
+  }
+
+  .campo.full { grid-column: 1 / -1; }
+
+  .card-footer {
+    padding: 12px 20px;
+    border-top: 1px solid var(--cinza-fundo);
+    display: flex;
+    gap: 8px;
   }
 
   .btn {
-    width: 100%;
-    padding: 16px;
+    flex: 1;
+    padding: 9px 12px;
+    border-radius: 8px;
     border: none;
-    border-radius: 10px;
-    font-family: 'Inter', sans-serif;
-    font-size: 15px;
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.15s, transform 0.1s;
-    margin-bottom: 12px;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
   }
 
-  .btn:active { transform: scale(0.98); }
-  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-whatsapp {
+    background: #25D366;
+    color: white;
+    flex: 0 0 auto;
+    padding: 9px 14px;
+  }
+
+  .btn-whatsapp:hover { background: #1da851; }
 
   .btn-assumir {
-    background: var(--vermelho);
-    color: var(--branco);
+    background: var(--azul);
+    color: white;
   }
 
-  .btn-assumir:hover:not(:disabled) { background: var(--vermelho-escuro); }
+  .btn-assumir:hover { background: #1A5276; }
 
-  .btn-liberar {
+  .btn-concluir {
     background: var(--verde);
-    color: var(--branco);
+    color: white;
   }
 
-  .btn-liberar:hover:not(:disabled) { background: var(--verde-escuro); }
+  .btn-concluir:hover { background: #1D6A39; }
 
-  .btn-secundario {
-    background: transparent;
-    color: var(--texto-suave);
+  .btn-desabilitado {
+    background: var(--cinza-fundo);
+    color: var(--cinza-texto);
+    cursor: default;
+  }
+
+  /* ESTADOS */
+  .estado-vazio {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--cinza-texto);
+  }
+
+  .estado-vazio .icone { font-size: 48px; margin-bottom: 12px; }
+  .estado-vazio .titulo { font-size: 16px; font-weight: 600; color: var(--preto); }
+  .estado-vazio .subtitulo { font-size: 13px; margin-top: 4px; }
+
+  .carregando {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px;
+    color: var(--cinza-texto);
+    font-size: 14px;
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--preto);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 10px;
     font-size: 13px;
     font-weight: 500;
-    padding: 10px;
-    margin-bottom: 0;
-    border: 1px solid var(--cinza-borda);
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s;
+    z-index: 999;
+    pointer-events: none;
   }
 
-  .feedback {
-    display: none;
-    text-align: center;
-    padding: 14px;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 500;
-    margin-bottom: 12px;
+  .toast.visivel {
+    opacity: 1;
+    transform: translateY(0);
   }
 
-  .feedback.sucesso {
-    background: #E8F5E9;
-    color: var(--verde);
-  }
-
-  .feedback.erro {
-    background: #FDE8E8;
-    color: var(--vermelho);
-  }
-
-  .rodape {
-    margin-top: 24px;
-    font-size: 11px;
-    color: var(--texto-suave);
-    text-align: center;
-  }
-
-  .spinner {
-    display: none;
-    width: 18px;
-    height: 18px;
-    border: 2px solid rgba(255,255,255,0.4);
-    border-top-color: white;
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-    margin: 0 auto;
-  }
-
-  @keyframes spin { to { transform: rotate(360deg); } }
+  .toast.sucesso { background: var(--verde); }
+  .toast.erro { background: var(--vermelho); }
 </style>
 </head>
 <body>
 
-<div class="logo">❤ Cardiocenter</div>
-
-<div class="card">
-  <div class="label">Pré-agendamento</div>
-  <div class="paciente-nome" id="nome-paciente">Carregando...</div>
-  <div class="paciente-tel" id="tel-paciente"></div>
-
-  <hr class="divider">
-
-  <div class="resumo" id="resumo-dados"></div>
-
-  <div id="status-badge" class="status-badge agente">
-    <span class="status-dot"></span>
-    <span id="status-texto">Agente respondendo</span>
+<header>
+  <div class="logo">
+    <div class="logo-icone">❤</div>
+    <div>
+      <div class="logo-texto">Cardiocenter</div>
+      <div class="logo-sub">Painel de Atendimento</div>
+    </div>
   </div>
+  <div class="header-direita">
+    <div class="status-online">
+      <div class="dot-online"></div>
+      Sistema ativo
+    </div>
+    <button class="btn-atualizar" onclick="carregarAgendamentos()">
+      ↻ Atualizar
+    </button>
+  </div>
+</header>
 
-  <div class="feedback" id="feedback"></div>
-
-  <button class="btn btn-assumir" id="btn-assumir" onclick="acao('humano')">
-    Assumir atendimento
-  </button>
-
-  <button class="btn btn-liberar" id="btn-liberar" onclick="acao('livre')" style="display:none">
-    Liberar para o agente
-  </button>
-
-  <button class="btn btn-secundario" onclick="abrirWhatsApp()">
-    Abrir conversa no WhatsApp
-  </button>
+<div class="contadores">
+  <div class="contador-card">
+    <div class="contador-icone pendente">⏳</div>
+    <div>
+      <div class="contador-numero" id="cnt-pendente">—</div>
+      <div class="contador-label">Aguardando</div>
+    </div>
+  </div>
+  <div class="contador-card">
+    <div class="contador-icone atendimento">📞</div>
+    <div>
+      <div class="contador-numero" id="cnt-atendimento">—</div>
+      <div class="contador-label">Em atendimento</div>
+    </div>
+  </div>
+  <div class="contador-card">
+    <div class="contador-icone concluido">✅</div>
+    <div>
+      <div class="contador-numero" id="cnt-concluido">—</div>
+      <div class="contador-label">Concluídos hoje</div>
+    </div>
+  </div>
 </div>
 
-<div class="rodape">Painel interno · Cardiocenter</div>
+<div class="filtros">
+  <button class="filtro-btn ativo" onclick="filtrar('todos', this)">Todos</button>
+  <button class="filtro-btn" onclick="filtrar('pendente', this)">Aguardando</button>
+  <button class="filtro-btn" onclick="filtrar('em_atendimento', this)">Em atendimento</button>
+  <button class="filtro-btn" onclick="filtrar('concluido', this)">Concluídos</button>
+</div>
+
+<div class="lista" id="lista">
+  <div class="carregando">Carregando pré-agendamentos...</div>
+</div>
+
+<div class="toast" id="toast"></div>
 
 <script>
-  // ─── CONFIGURAÇÃO ───────────────────────────────────────────
-  // Substitua pela URL do webhook do seu N8N
-  const WEBHOOK_URL = 'https://coldbloodedchameleon-n8n.cloudfy.live/webhook/controle-painel';
-  // ────────────────────────────────────────────────────────────
+const WEBHOOK_URL = 'https://coldbloodedchameleon-n8n.cloudfy.live/webhook/painel-agendamentos';
 
-  const params = new URLSearchParams(window.location.search);
-  const telefone = params.get('tel') || '';
-  const nome     = params.get('nome') || 'Paciente';
-  const servico  = params.get('servico') || '';
-  const medico   = params.get('medico') || '';
-  const convenio = params.get('convenio') || '';
-  const preferencia = params.get('preferencia') || '';
+let todosAgendamentos = [];
+let filtroAtivo = 'todos';
 
-  let estadoAtual = 'agente'; // 'agente' ou 'humano'
+async function carregarAgendamentos() {
+  try {
+    const res = await fetch(WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ acao: 'listar' })
+    });
+    const data = await res.json();
+    todosAgendamentos = data.agendamentos || [];
+    atualizarContadores();
+    renderizarLista();
+  } catch (e) {
+    document.getElementById('lista').innerHTML = `
+      <div class="estado-vazio">
+        <div class="icone">⚠️</div>
+        <div class="titulo">Erro ao carregar</div>
+        <div class="subtitulo">Verifique se o workflow está ativo no N8N</div>
+      </div>`;
+  }
+}
 
-  // Preenche os dados na tela
-  document.getElementById('nome-paciente').textContent = nome;
-  document.getElementById('tel-paciente').textContent = telefone.replace(/^55/, '+55 ');
+function atualizarContadores() {
+  const hoje = new Date().toDateString();
+  const pendentes = todosAgendamentos.filter(a => a.status === 'pendente').length;
+  const atendimento = todosAgendamentos.filter(a => a.status === 'em_atendimento').length;
+  const concluidos = todosAgendamentos.filter(a => {
+    return a.status === 'concluido' && new Date(a.updated_at).toDateString() === hoje;
+  }).length;
 
-  const resumoEl = document.getElementById('resumo-dados');
-  const linhas = [
-    ['Serviço', servico],
-    ['Médico', medico],
-    ['Convênio', convenio],
-    ['Preferência', preferencia],
-  ];
-  resumoEl.innerHTML = linhas.filter(([,v]) => v).map(([c, v]) =>
-    `<div class="resumo-linha"><span class="resumo-campo">${c}</span><span class="resumo-valor">${v}</span></div>`
-  ).join('');
+  document.getElementById('cnt-pendente').textContent = pendentes;
+  document.getElementById('cnt-atendimento').textContent = atendimento;
+  document.getElementById('cnt-concluido').textContent = concluidos;
+}
 
-  function atualizaEstado(estado) {
-    estadoAtual = estado;
-    const badge  = document.getElementById('status-badge');
-    const texto  = document.getElementById('status-texto');
-    const btnA   = document.getElementById('btn-assumir');
-    const btnL   = document.getElementById('btn-liberar');
+function filtrar(status, btn) {
+  filtroAtivo = status;
+  document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('ativo'));
+  btn.classList.add('ativo');
+  renderizarLista();
+}
 
-    if (estado === 'humano') {
-      badge.className  = 'status-badge humano';
-      texto.textContent = 'Você está atendendo';
-      btnA.style.display = 'none';
-      btnL.style.display = 'block';
-    } else {
-      badge.className  = 'status-badge agente';
-      texto.textContent = 'Agente respondendo';
-      btnA.style.display = 'block';
-      btnL.style.display = 'none';
-    }
+function renderizarLista() {
+  const lista = document.getElementById('lista');
+  const filtrados = filtroAtivo === 'todos'
+    ? todosAgendamentos
+    : todosAgendamentos.filter(a => a.status === filtroAtivo);
+
+  if (filtrados.length === 0) {
+    lista.innerHTML = `
+      <div class="estado-vazio">
+        <div class="icone">📋</div>
+        <div class="titulo">Nenhum pré-agendamento aqui</div>
+        <div class="subtitulo">Os novos pré-agendamentos aparecerão automaticamente</div>
+      </div>`;
+    return;
   }
 
-  function mostraFeedback(msg, tipo) {
-    const el = document.getElementById('feedback');
-    el.textContent = msg;
-    el.className = `feedback ${tipo}`;
-    el.style.display = 'block';
-    setTimeout(() => { el.style.display = 'none'; }, 3000);
+  lista.innerHTML = filtrados.map(a => criarCard(a)).join('');
+}
+
+function criarCard(a) {
+  const data = new Date(a.created_at);
+  const dataFormatada = data.toLocaleDateString('pt-BR') + ' às ' + data.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+  const tel = (a.telefone || '').replace(/\D/g, '').replace(/^55/, '');
+  const telWhats = '55' + tel;
+
+  const badges = {
+    pendente: 'Aguardando',
+    em_atendimento: 'Em atendimento',
+    concluido: 'Concluído'
+  };
+
+  let botoesHTML = '';
+
+  if (a.status === 'pendente') {
+    botoesHTML = `
+      <button class="btn btn-whatsapp" onclick="abrirWhatsApp('${telWhats}')" title="Abrir conversa">💬</button>
+      <button class="btn btn-assumir" onclick="assumir(${a.id})">📞 Assumir atendimento</button>`;
+  } else if (a.status === 'em_atendimento') {
+    botoesHTML = `
+      <button class="btn btn-whatsapp" onclick="abrirWhatsApp('${telWhats}')" title="Abrir conversa">💬</button>
+      <button class="btn btn-concluir" onclick="concluir(${a.id})">✅ Marcar como concluído</button>`;
+  } else {
+    botoesHTML = `
+      <button class="btn btn-whatsapp" onclick="abrirWhatsApp('${telWhats}')" title="Abrir conversa">💬</button>
+      <button class="btn btn-desabilitado" disabled>✅ Concluído</button>`;
   }
 
-  async function acao(comando) {
-    const btn = document.getElementById(comando === 'humano' ? 'btn-assumir' : 'btn-liberar');
-    btn.disabled = true;
-    btn.innerHTML = '<div class="spinner" style="display:block"></div>';
+  return `
+    <div class="card ${a.status}" id="card-${a.id}">
+      <div class="card-header">
+        <div>
+          <div class="card-nome">${a.nome || '—'}</div>
+          <div class="card-data">${dataFormatada}</div>
+        </div>
+        <span class="badge ${a.status}">${badges[a.status] || a.status}</span>
+      </div>
+      <div class="card-body">
+        <div class="campo">
+          <div class="campo-label">Serviço</div>
+          <div class="campo-valor">${a.servico || '—'}</div>
+        </div>
+        <div class="campo">
+          <div class="campo-label">Convênio</div>
+          <div class="campo-valor">${a.convenio || '—'}</div>
+        </div>
+        <div class="campo">
+          <div class="campo-label">Médico</div>
+          <div class="campo-valor">${a.medico || '—'}</div>
+        </div>
+        <div class="campo">
+          <div class="campo-label">Preferência</div>
+          <div class="campo-valor">${a.preferencia || '—'}</div>
+        </div>
+        <div class="campo">
+          <div class="campo-label">Telefone</div>
+          <div class="campo-valor">${tel || '—'}</div>
+        </div>
+        <div class="campo">
+          <div class="campo-label">Nascimento</div>
+          <div class="campo-valor">${a.nascimento || '—'}</div>
+        </div>
+        <div class="campo full">
+          <div class="campo-label">E-mail</div>
+          <div class="campo-valor">${a.email || '—'}</div>
+        </div>
+      </div>
+      <div class="card-footer">
+        ${botoesHTML}
+      </div>
+    </div>`;
+}
 
-    try {
-      const resp = await fetch(WEBHOOK_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ comando, telefone, nome })
-      });
-
-      if (resp.ok) {
-        atualizaEstado(comando === 'humano' ? 'humano' : 'agente');
-        mostraFeedback(
-          comando === 'humano'
-            ? 'Atendimento assumido. O agente está pausado.'
-            : 'Paciente liberado. O agente voltará a responder.',
-          'sucesso'
-        );
-      } else {
-        throw new Error('Falha na resposta');
-      }
-    } catch (e) {
-      mostraFeedback('Erro ao processar. Tente novamente.', 'erro');
-    }
-
-    btn.disabled = false;
-    btn.innerHTML = comando === 'humano' ? 'Assumir atendimento' : 'Liberar para o agente';
+async function assumir(id) {
+  try {
+    await fetch(WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ acao: 'assumir', id })
+    });
+    mostrarToast('Atendimento assumido!', 'sucesso');
+    await carregarAgendamentos();
+  } catch (e) {
+    mostrarToast('Erro ao assumir. Tente novamente.', 'erro');
   }
+}
 
-  function abrirWhatsApp() {
-    const tel = telefone.replace(/\D/g, '');
-    window.open(`https://wa.me/${tel}`, '_blank');
+async function concluir(id) {
+  try {
+    await fetch(WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ acao: 'concluir', id })
+    });
+    mostrarToast('Marcado como concluído!', 'sucesso');
+    await carregarAgendamentos();
+  } catch (e) {
+    mostrarToast('Erro ao concluir. Tente novamente.', 'erro');
   }
+}
+
+function abrirWhatsApp(tel) {
+  window.open('https://wa.me/' + tel, '_blank');
+}
+
+function mostrarToast(msg, tipo) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast visivel ' + (tipo || '');
+  setTimeout(() => { t.className = 'toast'; }, 3000);
+}
+
+// Carrega ao abrir e atualiza a cada 30 segundos
+carregarAgendamentos();
+setInterval(carregarAgendamentos, 30000);
 </script>
-
 </body>
 </html>
