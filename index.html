@@ -374,6 +374,125 @@
   .toast.sucesso { background: var(--verde); }
   .toast.erro { background: var(--vermelho); }
   .toast.aviso { background: var(--amarelo); color: var(--preto); }
+
+  /* MODAL SELETOR DE ATENDENTE */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 300;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.visivel { display: flex; }
+
+  .modal {
+    background: var(--branco);
+    border-radius: 16px;
+    padding: 28px;
+    width: 340px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  }
+
+  .modal-titulo {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--preto);
+    margin-bottom: 6px;
+  }
+
+  .modal-sub {
+    font-size: 13px;
+    color: var(--cinza-texto);
+    margin-bottom: 20px;
+  }
+
+  .atendentes-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .atendente-btn {
+    padding: 14px 10px;
+    border-radius: 10px;
+    border: 2px solid var(--cinza-borda);
+    background: var(--cinza-fundo);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--preto);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+  }
+
+  .atendente-btn:hover {
+    border-color: var(--vermelho);
+    background: var(--vermelho-claro);
+    color: var(--vermelho);
+  }
+
+  .atendente-btn.selecionado {
+    border-color: var(--vermelho);
+    background: var(--vermelho);
+    color: white;
+  }
+
+  .modal-avatar {
+    font-size: 20px;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .modal-acoes {
+    display: flex;
+    gap: 10px;
+  }
+
+  .btn-cancelar {
+    flex: 1;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1.5px solid var(--cinza-borda);
+    background: transparent;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--cinza-texto);
+    cursor: pointer;
+  }
+
+  .btn-confirmar-assumir {
+    flex: 2;
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    background: var(--vermelho);
+    font-size: 13px;
+    font-weight: 600;
+    color: white;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .btn-confirmar-assumir:hover { background: var(--vermelho-escuro); }
+  .btn-confirmar-assumir:disabled { background: var(--cinza-borda); cursor: default; }
+
+  /* TAG DE ATENDENTE NO CARD */
+  .atendente-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--azul-claro);
+    color: #1A5276;
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-top: 6px;
+  }
+
 </style>
 </head>
 <body>
@@ -534,6 +653,7 @@ function criarCard(a) {
         <div>
           <div class="card-nome">${a.nome || '—'}</div>
           <div class="card-data">${dataFormatada}</div>
+        ${a.atendente && a.status === 'em_atendimento' ? '<div class="atendente-tag">👩 ' + a.atendente + '</div>' : ''}
         </div>
         <span class="badge ${a.status}">${badges[a.status] || a.status}</span>
       </div>
@@ -573,27 +693,52 @@ function criarCard(a) {
     </div>`;
 }
 
-async function assumir(id) {
-  // Desabilita o botão imediatamente para evitar duplo clique
+let _idParaAssumir = null;
+let _atendenteSelecioanda = null;
+
+function assumir(id) {
+  _idParaAssumir = id;
+  _atendenteSelecioanda = null;
+  // Limpa seleção anterior
+  document.querySelectorAll('.atendente-btn').forEach(b => b.classList.remove('selecionado'));
+  document.getElementById('btnConfirmarAssumir').disabled = true;
+  document.getElementById('modalAtendente').classList.add('visivel');
+}
+
+function selecionarAtendente(nome, btn) {
+  _atendenteSelecioanda = nome;
+  document.querySelectorAll('.atendente-btn').forEach(b => b.classList.remove('selecionado'));
+  btn.classList.add('selecionado');
+  document.getElementById('btnConfirmarAssumir').disabled = false;
+}
+
+function fecharModal() {
+  _idParaAssumir = null;
+  _atendenteSelecioanda = null;
+  document.getElementById('modalAtendente').classList.remove('visivel');
+}
+
+async function confirmarAssumir() {
+  const id = _idParaAssumir;
+  const atendente = _atendenteSelecioanda;
+  fecharModal();
+
   const card = document.getElementById('card-' + id);
   if (card) {
     const btn = card.querySelector('.btn-assumir');
-    if (btn) {
-      btn.disabled = true;
-      btn.textContent = 'Verificando...';
-    }
+    if (btn) { btn.disabled = true; btn.textContent = 'Verificando...'; }
   }
 
   try {
     const res = await fetch(WEBHOOK_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ acao: 'assumir', id })
+      body: JSON.stringify({ acao: 'assumir', id, atendente })
     });
     const data = await res.json();
 
     if (data.success) {
-      mostrarToast('✅ Atendimento assumido com sucesso!', 'sucesso');
+      mostrarToast('✅ Assumido por ' + atendente + '!', 'sucesso');
     } else {
       mostrarToast('⚠️ ' + data.mensagem, 'erro');
     }
@@ -633,5 +778,34 @@ function mostrarToast(msg, tipo) {
 carregarAgendamentos();
 setInterval(carregarAgendamentos, 30000);
 </script>
+
+<!-- MODAL SELETOR DE ATENDENTE -->
+<div class="modal-overlay" id="modalAtendente">
+  <div class="modal">
+    <div class="modal-titulo">Quem vai atender?</div>
+    <div class="modal-sub">Selecione seu nome para assumir esta conversa</div>
+    <div class="atendentes-grid">
+      <button class="atendente-btn" onclick="selecionarAtendente('Amábile', this)">
+        <span class="modal-avatar">👩</span>Amábile
+      </button>
+      <button class="atendente-btn" onclick="selecionarAtendente('Sabrina', this)">
+        <span class="modal-avatar">👩</span>Sabrina
+      </button>
+      <button class="atendente-btn" onclick="selecionarAtendente('Laura', this)">
+        <span class="modal-avatar">👩</span>Laura
+      </button>
+      <button class="atendente-btn" onclick="selecionarAtendente('Julia', this)">
+        <span class="modal-avatar">👩</span>Julia
+      </button>
+    </div>
+    <div class="modal-acoes">
+      <button class="btn-cancelar" onclick="fecharModal()">Cancelar</button>
+      <button class="btn-confirmar-assumir" id="btnConfirmarAssumir" onclick="confirmarAssumir()" disabled>
+        Confirmar e assumir
+      </button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
