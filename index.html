@@ -801,19 +801,21 @@ function criarCard(a) {
     concluido: 'Concluído'
   };
 
+  const mensagemJSON = JSON.stringify(montarMensagemConfirmacao(a)).replace(/"/g, '&quot;');
+
   let botoesHTML = '';
 
   if (a.status === 'pendente') {
     botoesHTML = `
-      <button class="btn btn-whatsapp" onclick="abrirWhatsApp('${telWhats}')" title="Abrir conversa">💬</button>
+      <button class="btn btn-whatsapp" onclick='abrirWhatsApp("${telWhats}", ${mensagemJSON})' title="Abrir conversa">💬</button>
       <button class="btn btn-assumir" onclick="assumir(${a.id})">📞 Assumir atendimento</button>`;
   } else if (a.status === 'em_atendimento') {
     botoesHTML = `
-      <button class="btn btn-whatsapp" onclick="abrirWhatsApp('${telWhats}')" title="Abrir conversa">💬</button>
+      <button class="btn btn-whatsapp" onclick='abrirWhatsApp("${telWhats}", ${mensagemJSON})' title="Abrir conversa">💬</button>
       <button class="btn btn-concluir" onclick="concluir(${a.id})">✅ Marcar como concluído</button>`;
   } else {
     botoesHTML = `
-      <button class="btn btn-whatsapp" onclick="abrirWhatsApp('${telWhats}')" title="Abrir conversa">💬</button>
+      <button class="btn btn-whatsapp" onclick='abrirWhatsApp("${telWhats}", ${mensagemJSON})' title="Abrir conversa">💬</button>
       <button class="btn btn-desabilitado" disabled>✅ Concluído</button>`;
   }
 
@@ -933,8 +935,21 @@ async function concluir(id) {
   }
 }
 
-function abrirWhatsApp(tel) {
-  window.open('https://wa.me/' + tel, '_blank');
+function abrirWhatsApp(tel, mensagem) {
+  const texto = mensagem ? '&text=' + encodeURIComponent(mensagem) : '';
+  // Vai direto pra conversa dentro da sessão já logada do WhatsApp Web
+  // (sem passar pela tela intermediária do wa.me) e reaproveita a mesma aba.
+  window.open('https://web.whatsapp.com/send?phone=' + tel + texto, 'painel_whatsapp');
+}
+
+function montarMensagemConfirmacao(a) {
+  let msg = `Olá${a.nome ? ', ' + a.nome.split(' ')[0] : ''}! Aqui é da Cardiocenter.`;
+  msg += `\n\nSeu agendamento foi confirmado:`;
+  if (a.servico) msg += `\n📋 Serviço: ${a.servico}`;
+  if (a.medico) msg += `\n👨‍⚕️ Médico: ${a.medico}`;
+  if (a.convenio) msg += `\n💳 Convênio: ${a.convenio}`;
+  msg += `\n\nQualquer dúvida, estamos à disposição!`;
+  return msg;
 }
 
 function abrirDetalheConcluido(id) {
@@ -956,7 +971,7 @@ function abrirDetalheConcluido(id) {
   document.getElementById('detalhe-nascimento').textContent = a.nascimento || '—';
   document.getElementById('detalhe-email').textContent = a.email || '—';
   document.getElementById('detalhe-atendente').textContent = a.atendente || '—';
-  document.getElementById('detalhe-whatsapp-btn').onclick = () => abrirWhatsApp(telWhats);
+  document.getElementById('detalhe-whatsapp-btn').onclick = () => abrirWhatsApp(telWhats, montarMensagemConfirmacao(a));
 
   document.getElementById('modalDetalhe').classList.add('visivel');
 }
