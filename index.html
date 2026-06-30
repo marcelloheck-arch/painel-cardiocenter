@@ -948,6 +948,7 @@ function montarMensagemConfirmacao(a) {
   if (a.servico) msg += `\n📋 Serviço: ${a.servico}`;
   if (a.medico) msg += `\n👨‍⚕️ Médico: ${a.medico}`;
   if (a.convenio) msg += `\n💳 Convênio: ${a.convenio}`;
+  msg += `\n📅 Data: [DIGITE A DATA AQUI]`;
   msg += `\n\nQualquer dúvida, estamos à disposição!`;
   return msg;
 }
