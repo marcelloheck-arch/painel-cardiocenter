@@ -493,6 +493,136 @@
     margin-top: 6px;
   }
 
+  /* LAYOUT PRINCIPAL + SIDEBAR */
+  .layout {
+    display: flex;
+    align-items: flex-start;
+    gap: 0;
+    padding: 0 32px 32px;
+  }
+
+  .coluna-principal {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .coluna-principal .filtros { padding: 20px 0 0; }
+  .coluna-principal .lista { padding: 20px 0 0; }
+
+  /* SIDEBAR DE CONCLUÍDOS */
+  .sidebar-concluidos {
+    width: 300px;
+    flex-shrink: 0;
+    margin-left: 24px;
+    background: var(--branco);
+    border: 1px solid var(--cinza-borda);
+    border-radius: 14px;
+    overflow: hidden;
+    position: sticky;
+    top: 88px;
+    max-height: calc(100vh - 110px);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sidebar-header {
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--cinza-fundo);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--verde-claro);
+  }
+
+  .sidebar-titulo {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1D6A39;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .sidebar-contagem {
+    font-size: 11px;
+    font-weight: 700;
+    color: #1D6A39;
+    background: var(--branco);
+    border-radius: 20px;
+    padding: 2px 9px;
+  }
+
+  .sidebar-lista {
+    overflow-y: auto;
+    flex: 1;
+    padding: 8px;
+  }
+
+  .sidebar-vazio {
+    text-align: center;
+    padding: 30px 12px;
+    color: var(--cinza-texto);
+    font-size: 12px;
+  }
+
+  .item-concluido {
+    width: 100%;
+    text-align: left;
+    background: var(--cinza-fundo);
+    border: 1px solid var(--cinza-borda);
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .item-concluido:hover {
+    border-color: var(--verde);
+    background: var(--verde-claro);
+  }
+
+  .item-concluido-nome {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--preto);
+  }
+
+  .item-concluido-info {
+    font-size: 11px;
+    color: var(--cinza-texto);
+    margin-top: 2px;
+  }
+
+  /* MODAL DE DETALHE (visualização de concluído) */
+  .modal-detalhe { width: 380px; }
+
+  .modal-detalhe-corpo {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .modal-detalhe-corpo .campo.full { grid-column: 1 / -1; }
+
+  .modal-fechar-detalhe {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1.5px solid var(--cinza-borda);
+    background: transparent;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--cinza-texto);
+    cursor: pointer;
+  }
+
+  @media (max-width: 900px) {
+    .layout { flex-direction: column; padding: 0 16px 24px; }
+    .sidebar-concluidos { width: 100%; margin-left: 0; margin-top: 20px; position: static; max-height: none; }
+  }
+
 </style>
 </head>
 <body>
@@ -540,15 +670,28 @@
   </div>
 </div>
 
-<div class="filtros">
-  <button class="filtro-btn ativo" onclick="filtrar('todos', this)">Todos</button>
-  <button class="filtro-btn" onclick="filtrar('pendente', this)">Aguardando</button>
-  <button class="filtro-btn" onclick="filtrar('em_atendimento', this)">Em atendimento</button>
-  <button class="filtro-btn" onclick="filtrar('concluido', this)">Concluídos</button>
-</div>
+<div class="layout">
+  <div class="coluna-principal">
+    <div class="filtros">
+      <button class="filtro-btn ativo" onclick="filtrar('todos', this)">Todos</button>
+      <button class="filtro-btn" onclick="filtrar('pendente', this)">Aguardando</button>
+      <button class="filtro-btn" onclick="filtrar('em_atendimento', this)">Em atendimento</button>
+    </div>
 
-<div class="lista" id="lista">
-  <div class="carregando">Carregando pré-agendamentos...</div>
+    <div class="lista" id="lista">
+      <div class="carregando">Carregando pré-agendamentos...</div>
+    </div>
+  </div>
+
+  <div class="sidebar-concluidos">
+    <div class="sidebar-header">
+      <div class="sidebar-titulo">✅ Concluídos</div>
+      <div class="sidebar-contagem" id="sidebar-contagem">0</div>
+    </div>
+    <div class="sidebar-lista" id="sidebar-lista">
+      <div class="sidebar-vazio">Nenhum concluído ainda</div>
+    </div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -570,6 +713,7 @@ async function carregarAgendamentos() {
     todosAgendamentos = data.agendamentos || [];
     atualizarContadores();
     renderizarLista();
+    renderizarConcluidos();
   } catch (e) {
     document.getElementById('lista').innerHTML = `
       <div class="estado-vazio">
@@ -602,21 +746,47 @@ function filtrar(status, btn) {
 
 function renderizarLista() {
   const lista = document.getElementById('lista');
+  const naoConcluidos = todosAgendamentos.filter(a => a.status !== 'concluido');
   const filtrados = filtroAtivo === 'todos'
-    ? todosAgendamentos
-    : todosAgendamentos.filter(a => a.status === filtroAtivo);
+    ? naoConcluidos
+    : naoConcluidos.filter(a => a.status === filtroAtivo);
 
   if (filtrados.length === 0) {
     lista.innerHTML = `
       <div class="estado-vazio">
         <div class="icone">📋</div>
-        <div class="titulo">Nenhum pré-agendamento aqui</div>
+        <div class="titulo">Nenhum pré-agendamento pendente</div>
         <div class="subtitulo">Os novos pré-agendamentos aparecerão automaticamente</div>
       </div>`;
     return;
   }
 
   lista.innerHTML = filtrados.map(a => criarCard(a)).join('');
+}
+
+function renderizarConcluidos() {
+  const sidebarLista = document.getElementById('sidebar-lista');
+  const sidebarContagem = document.getElementById('sidebar-contagem');
+  const concluidos = todosAgendamentos
+    .filter(a => a.status === 'concluido')
+    .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+
+  sidebarContagem.textContent = concluidos.length;
+
+  if (concluidos.length === 0) {
+    sidebarLista.innerHTML = '<div class="sidebar-vazio">Nenhum concluído ainda</div>';
+    return;
+  }
+
+  sidebarLista.innerHTML = concluidos.map(a => {
+    const data = new Date(a.updated_at || a.created_at);
+    const dataFormatada = data.toLocaleDateString('pt-BR') + ' às ' + data.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+    return `
+      <button class="item-concluido" onclick="abrirDetalheConcluido(${a.id})">
+        <div class="item-concluido-nome">${a.nome || '—'}</div>
+        <div class="item-concluido-info">${a.servico || '—'} · ${dataFormatada}</div>
+      </button>`;
+  }).join('');
 }
 
 function criarCard(a) {
@@ -767,6 +937,34 @@ function abrirWhatsApp(tel) {
   window.open('https://wa.me/' + tel, '_blank');
 }
 
+function abrirDetalheConcluido(id) {
+  const a = todosAgendamentos.find(x => x.id === id);
+  if (!a) return;
+
+  const data = new Date(a.created_at);
+  const dataFormatada = data.toLocaleDateString('pt-BR') + ' às ' + data.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+  const tel = (a.telefone || '').replace(/\D/g, '').replace(/^55/, '');
+  const telWhats = '55' + tel;
+
+  document.getElementById('detalhe-nome').textContent = a.nome || '—';
+  document.getElementById('detalhe-data').textContent = dataFormatada;
+  document.getElementById('detalhe-servico').textContent = a.servico || '—';
+  document.getElementById('detalhe-convenio').textContent = a.convenio || '—';
+  document.getElementById('detalhe-medico').textContent = a.medico || '—';
+  document.getElementById('detalhe-preferencia').textContent = a.preferencia || '—';
+  document.getElementById('detalhe-telefone').textContent = tel || '—';
+  document.getElementById('detalhe-nascimento').textContent = a.nascimento || '—';
+  document.getElementById('detalhe-email').textContent = a.email || '—';
+  document.getElementById('detalhe-atendente').textContent = a.atendente || '—';
+  document.getElementById('detalhe-whatsapp-btn').onclick = () => abrirWhatsApp(telWhats);
+
+  document.getElementById('modalDetalhe').classList.add('visivel');
+}
+
+function fecharModalDetalhe() {
+  document.getElementById('modalDetalhe').classList.remove('visivel');
+}
+
 function mostrarToast(msg, tipo) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -802,6 +1000,54 @@ setInterval(carregarAgendamentos, 30000);
       <button class="btn-cancelar" onclick="fecharModal()">Cancelar</button>
       <button class="btn-confirmar-assumir" id="btnConfirmarAssumir" onclick="confirmarAssumir()" disabled>
         Confirmar e assumir
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DETALHE DE CONCLUÍDO (somente leitura) -->
+<div class="modal-overlay" id="modalDetalhe">
+  <div class="modal modal-detalhe">
+    <div class="modal-titulo" id="detalhe-nome">—</div>
+    <div class="modal-sub" id="detalhe-data">—</div>
+    <div class="modal-detalhe-corpo">
+      <div class="campo">
+        <div class="campo-label">Serviço</div>
+        <div class="campo-valor" id="detalhe-servico">—</div>
+      </div>
+      <div class="campo">
+        <div class="campo-label">Convênio</div>
+        <div class="campo-valor" id="detalhe-convenio">—</div>
+      </div>
+      <div class="campo">
+        <div class="campo-label">Médico</div>
+        <div class="campo-valor" id="detalhe-medico">—</div>
+      </div>
+      <div class="campo">
+        <div class="campo-label">Preferência</div>
+        <div class="campo-valor" id="detalhe-preferencia">—</div>
+      </div>
+      <div class="campo">
+        <div class="campo-label">Telefone</div>
+        <div class="campo-valor" id="detalhe-telefone">—</div>
+      </div>
+      <div class="campo">
+        <div class="campo-label">Nascimento</div>
+        <div class="campo-valor" id="detalhe-nascimento">—</div>
+      </div>
+      <div class="campo full">
+        <div class="campo-label">E-mail</div>
+        <div class="campo-valor" id="detalhe-email">—</div>
+      </div>
+      <div class="campo full">
+        <div class="campo-label">Atendido por</div>
+        <div class="campo-valor" id="detalhe-atendente">—</div>
+      </div>
+    </div>
+    <div class="modal-acoes">
+      <button class="btn-cancelar" onclick="fecharModalDetalhe()">Fechar</button>
+      <button class="btn-confirmar-assumir" id="detalhe-whatsapp-btn" style="background: #25D366;">
+        💬 Abrir WhatsApp
       </button>
     </div>
   </div>
