@@ -493,6 +493,38 @@
     margin-top: 6px;
   }
 
+  /* TAG DE TIPO (CANCELAMENTO / REMARCAÇÃO) */
+  .tipo-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-top: 6px;
+  }
+
+  .tipo-tag.cancelamento {
+    background: var(--vermelho-claro);
+    color: var(--vermelho-escuro);
+  }
+
+  .tipo-tag.remarcacao {
+    background: #E8DAEF;
+    color: #6C3483;
+  }
+
+  .item-concluido-tipo {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    margin-left: 6px;
+  }
+
+  .item-concluido-tipo.cancelamento { color: var(--vermelho-escuro); }
+  .item-concluido-tipo.remarcacao { color: #6C3483; }
+
   /* LAYOUT PRINCIPAL + SIDEBAR */
   .layout {
     display: flex;
@@ -556,6 +588,30 @@
     overflow-y: auto;
     flex: 1;
     padding: 8px;
+  }
+
+  /* BADGE DE IDENTIFICAÇÃO DA ATENDENTE */
+  .badge-identificacao {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--azul-claro);
+    color: #1A5276;
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .badge-identificacao .trocar-link {
+    background: none;
+    border: none;
+    color: #1A5276;
+    text-decoration: underline;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0;
   }
 
   .sidebar-vazio {
@@ -636,6 +692,10 @@
     </div>
   </div>
   <div class="header-direita">
+    <div class="badge-identificacao" id="badgeIdentificacao">
+      👩 Você é: <span id="nomeAtendenteAtual">—</span>
+      <button class="trocar-link" onclick="abrirTrocaIdentificacao()">trocar</button>
+    </div>
     <div class="status-online">
       <div class="dot-online"></div>
       Sistema ativo
@@ -781,10 +841,13 @@ function renderizarConcluidos() {
   sidebarLista.innerHTML = concluidos.map(a => {
     const data = new Date(a.updated_at || a.created_at);
     const dataFormatada = data.toLocaleDateString('pt-BR') + ' às ' + data.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+    const tipo = a.tipo_solicitacao || 'novo';
+    const tipoLabels = { cancelamento: 'Cancelamento', remarcacao: 'Remarcação' };
+    const linhaInfo = tipo === 'novo' ? (a.servico || '—') : (tipoLabels[tipo] || tipo);
     return `
       <button class="item-concluido" onclick="abrirDetalheConcluido(${a.id})">
         <div class="item-concluido-nome">${a.nome || '—'}</div>
-        <div class="item-concluido-info">${a.servico || '—'} · ${dataFormatada}</div>
+        <div class="item-concluido-info">${linhaInfo} · ${dataFormatada}</div>
       </button>`;
   }).join('');
 }
@@ -794,12 +857,18 @@ function criarCard(a) {
   const dataFormatada = data.toLocaleDateString('pt-BR') + ' às ' + data.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
   const tel = (a.telefone || '').replace(/\D/g, '').replace(/^55/, '');
   const telWhats = '55' + tel;
+  const tipo = a.tipo_solicitacao || 'novo';
 
   const badges = {
     pendente: 'Aguardando',
     em_atendimento: 'Em atendimento',
     concluido: 'Concluído'
   };
+
+  const tipoLabels = { cancelamento: '❌ Cancelamento', remarcacao: '🔄 Remarcação' };
+  const tipoTagHTML = tipo !== 'novo'
+    ? `<div class="tipo-tag ${tipo}">${tipoLabels[tipo] || tipo}</div>`
+    : '';
 
   const mensagemJSON = JSON.stringify(montarMensagemConfirmacao(a)).replace(/"/g, '&quot;');
 
@@ -819,17 +888,10 @@ function criarCard(a) {
       <button class="btn btn-desabilitado" disabled>✅ Concluído</button>`;
   }
 
-  return `
-    <div class="card ${a.status}" id="card-${a.id}">
-      <div class="card-header">
-        <div>
-          <div class="card-nome">${a.nome || '—'}</div>
-          <div class="card-data">${dataFormatada}</div>
-        ${a.atendente && a.status === 'em_atendimento' ? '<div class="atendente-tag">👩 ' + a.atendente + '</div>' : ''}
-        </div>
-        <span class="badge ${a.status}">${badges[a.status] || a.status}</span>
-      </div>
-      <div class="card-body">
+  let corpoHTML = '';
+
+  if (tipo === 'novo') {
+    corpoHTML = `
         <div class="campo">
           <div class="campo-label">Serviço</div>
           <div class="campo-valor">${a.servico || '—'}</div>
@@ -857,7 +919,37 @@ function criarCard(a) {
         <div class="campo full">
           <div class="campo-label">E-mail</div>
           <div class="campo-valor">${a.email || '—'}</div>
+        </div>`;
+  } else {
+    corpoHTML = `
+        <div class="campo full">
+          <div class="campo-label">Data da consulta/exame a alterar</div>
+          <div class="campo-valor">${a.data_consulta_atual || '—'}</div>
         </div>
+        ${tipo === 'remarcacao' ? `
+        <div class="campo full">
+          <div class="campo-label">Nova data pretendida</div>
+          <div class="campo-valor">${a.nova_data_pretendida || '—'}</div>
+        </div>` : ''}
+        <div class="campo full">
+          <div class="campo-label">Telefone</div>
+          <div class="campo-valor">${tel || '—'}</div>
+        </div>`;
+  }
+
+  return `
+    <div class="card ${a.status}" id="card-${a.id}">
+      <div class="card-header">
+        <div>
+          <div class="card-nome">${a.nome || '—'}</div>
+          <div class="card-data">${dataFormatada}</div>
+        ${tipoTagHTML}
+        ${a.atendente && a.status === 'em_atendimento' ? '<div class="atendente-tag">👩 ' + a.atendente + '</div>' : ''}
+        </div>
+        <span class="badge ${a.status}">${badges[a.status] || a.status}</span>
+      </div>
+      <div class="card-body">
+        ${corpoHTML}
       </div>
       <div class="card-footer">
         ${botoesHTML}
@@ -867,14 +959,49 @@ function criarCard(a) {
 
 let _idParaAssumir = null;
 let _atendenteSelecioanda = null;
+let _trocandoIdentificacao = false;
 
-function assumir(id) {
-  _idParaAssumir = id;
-  _atendenteSelecioanda = null;
-  // Limpa seleção anterior
+const CHAVE_ATENDENTE = 'cardiocenter_atendente';
+
+function obterAtendenteIdentificada() {
+  return localStorage.getItem(CHAVE_ATENDENTE);
+}
+
+function verificarIdentificacao() {
+  const atual = obterAtendenteIdentificada();
+  if (atual) {
+    document.getElementById('nomeAtendenteAtual').textContent = atual;
+    document.getElementById('badgeIdentificacao').style.display = 'flex';
+  } else {
+    document.getElementById('badgeIdentificacao').style.display = 'none';
+    abrirModalIdentificacao(false);
+  }
+}
+
+function abrirModalIdentificacao(trocando) {
+  _trocandoIdentificacao = trocando;
   document.querySelectorAll('.atendente-btn').forEach(b => b.classList.remove('selecionado'));
   document.getElementById('btnConfirmarAssumir').disabled = true;
+  document.getElementById('modalTitulo').textContent = trocando ? 'Trocar identificação' : 'Quem está usando este computador?';
+  document.getElementById('modalSub').textContent = trocando
+    ? 'Selecione quem vai usar este computador agora'
+    : 'Selecione seu nome — vamos lembrar disso neste computador';
+  document.getElementById('btnCancelarIdentificacao').style.display = trocando ? 'block' : 'none';
   document.getElementById('modalAtendente').classList.add('visivel');
+}
+
+function abrirTrocaIdentificacao() {
+  abrirModalIdentificacao(true);
+}
+
+function assumir(id) {
+  const atendente = obterAtendenteIdentificada();
+  if (!atendente) {
+    _idParaAssumir = id;
+    abrirModalIdentificacao(false);
+    return;
+  }
+  executarAssumir(id, atendente);
 }
 
 function selecionarAtendente(nome, btn) {
@@ -885,16 +1012,27 @@ function selecionarAtendente(nome, btn) {
 }
 
 function fecharModal() {
-  _idParaAssumir = null;
-  _atendenteSelecioanda = null;
   document.getElementById('modalAtendente').classList.remove('visivel');
 }
 
 async function confirmarAssumir() {
-  const id = _idParaAssumir;
-  const atendente = _atendenteSelecioanda;
+  const nome = _atendenteSelecioanda;
+  if (!nome) return;
+
+  // Salva a identificação neste computador
+  localStorage.setItem(CHAVE_ATENDENTE, nome);
+  verificarIdentificacao();
   fecharModal();
 
+  // Se essa identificação veio de um clique em "Assumir atendimento" específico, executa
+  if (_idParaAssumir) {
+    const id = _idParaAssumir;
+    _idParaAssumir = null;
+    await executarAssumir(id, nome);
+  }
+}
+
+async function executarAssumir(id, atendente) {
   const card = document.getElementById('card-' + id);
   if (card) {
     const btn = card.querySelector('.btn-assumir');
@@ -943,7 +1081,24 @@ function abrirWhatsApp(tel, mensagem) {
 }
 
 function montarMensagemConfirmacao(a) {
-  let msg = `Olá${a.nome ? ', ' + a.nome.split(' ')[0] : ''}! Aqui é da Cardiocenter.`;
+  const tipo = a.tipo_solicitacao || 'novo';
+  const primeiroNome = a.nome ? a.nome.split(' ')[0] : '';
+
+  if (tipo === 'cancelamento') {
+    let msg = `Olá${primeiroNome ? ', ' + primeiroNome : ''}! Aqui é da Cardiocenter.`;
+    msg += `\n\nRecebemos seu pedido de cancelamento da consulta/exame do dia ${a.data_consulta_atual || '[data]'}.`;
+    msg += `\n\nConfirmando o cancelamento?`;
+    return msg;
+  }
+
+  if (tipo === 'remarcacao') {
+    let msg = `Olá${primeiroNome ? ', ' + primeiroNome : ''}! Aqui é da Cardiocenter.`;
+    msg += `\n\nRecebemos seu pedido de remarcação da consulta/exame do dia ${a.data_consulta_atual || '[data]'}.`;
+    msg += `\n\nVamos verificar disponibilidade para ${a.nova_data_pretendida || '[nova data]'} e já te confirmamos!`;
+    return msg;
+  }
+
+  let msg = `Olá${primeiroNome ? ', ' + primeiroNome : ''}! Aqui é da Cardiocenter.`;
   msg += `\n\nSeu agendamento foi confirmado:`;
   if (a.servico) msg += `\n📋 Serviço: ${a.servico}`;
   if (a.medico) msg += `\n👨‍⚕️ Médico: ${a.medico}`;
@@ -962,17 +1117,71 @@ function abrirDetalheConcluido(id) {
   const dataFormatada = data.toLocaleDateString('pt-BR') + ' às ' + data.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
   const tel = (a.telefone || '').replace(/\D/g, '').replace(/^55/, '');
   const telWhats = '55' + tel;
+  const tipo = a.tipo_solicitacao || 'novo';
 
   document.getElementById('detalhe-nome').textContent = a.nome || '—';
   document.getElementById('detalhe-data').textContent = dataFormatada;
-  document.getElementById('detalhe-servico').textContent = a.servico || '—';
-  document.getElementById('detalhe-convenio').textContent = a.convenio || '—';
-  document.getElementById('detalhe-medico').textContent = a.medico || '—';
-  document.getElementById('detalhe-preferencia').textContent = a.preferencia || '—';
-  document.getElementById('detalhe-telefone').textContent = tel || '—';
-  document.getElementById('detalhe-nascimento').textContent = a.nascimento || '—';
-  document.getElementById('detalhe-email').textContent = a.email || '—';
-  document.getElementById('detalhe-atendente').textContent = a.atendente || '—';
+
+  let corpoHTML = '';
+  if (tipo === 'novo') {
+    corpoHTML = `
+      <div class="campo">
+        <div class="campo-label">Serviço</div>
+        <div class="campo-valor">${a.servico || '—'}</div>
+      </div>
+      <div class="campo">
+        <div class="campo-label">Convênio</div>
+        <div class="campo-valor">${a.convenio || '—'}</div>
+      </div>
+      <div class="campo">
+        <div class="campo-label">Médico</div>
+        <div class="campo-valor">${a.medico || '—'}</div>
+      </div>
+      <div class="campo">
+        <div class="campo-label">Preferência</div>
+        <div class="campo-valor">${a.preferencia || '—'}</div>
+      </div>
+      <div class="campo">
+        <div class="campo-label">Telefone</div>
+        <div class="campo-valor">${tel || '—'}</div>
+      </div>
+      <div class="campo">
+        <div class="campo-label">Nascimento</div>
+        <div class="campo-valor">${a.nascimento || '—'}</div>
+      </div>
+      <div class="campo full">
+        <div class="campo-label">E-mail</div>
+        <div class="campo-valor">${a.email || '—'}</div>
+      </div>`;
+  } else {
+    const tipoLabels = { cancelamento: 'Cancelamento', remarcacao: 'Remarcação' };
+    corpoHTML = `
+      <div class="campo full">
+        <div class="campo-label">Tipo de solicitação</div>
+        <div class="campo-valor">${tipoLabels[tipo] || tipo}</div>
+      </div>
+      <div class="campo full">
+        <div class="campo-label">Data da consulta/exame a alterar</div>
+        <div class="campo-valor">${a.data_consulta_atual || '—'}</div>
+      </div>
+      ${tipo === 'remarcacao' ? `
+      <div class="campo full">
+        <div class="campo-label">Nova data pretendida</div>
+        <div class="campo-valor">${a.nova_data_pretendida || '—'}</div>
+      </div>` : ''}
+      <div class="campo full">
+        <div class="campo-label">Telefone</div>
+        <div class="campo-valor">${tel || '—'}</div>
+      </div>`;
+  }
+
+  corpoHTML += `
+      <div class="campo full">
+        <div class="campo-label">Atendido por</div>
+        <div class="campo-valor">${a.atendente || '—'}</div>
+      </div>`;
+
+  document.getElementById('detalhe-corpo').innerHTML = corpoHTML;
   document.getElementById('detalhe-whatsapp-btn').onclick = () => abrirWhatsApp(telWhats, montarMensagemConfirmacao(a));
 
   document.getElementById('modalDetalhe').classList.add('visivel');
@@ -990,6 +1199,7 @@ function mostrarToast(msg, tipo) {
 }
 
 // Carrega ao abrir e atualiza a cada 30 segundos
+verificarIdentificacao();
 carregarAgendamentos();
 setInterval(carregarAgendamentos, 30000);
 </script>
@@ -997,8 +1207,8 @@ setInterval(carregarAgendamentos, 30000);
 <!-- MODAL SELETOR DE ATENDENTE -->
 <div class="modal-overlay" id="modalAtendente">
   <div class="modal">
-    <div class="modal-titulo">Quem vai atender?</div>
-    <div class="modal-sub">Selecione seu nome para assumir esta conversa</div>
+    <div class="modal-titulo" id="modalTitulo">Quem vai atender?</div>
+    <div class="modal-sub" id="modalSub">Selecione seu nome para assumir esta conversa</div>
     <div class="atendentes-grid">
       <button class="atendente-btn" onclick="selecionarAtendente('Amábile', this)">
         <span class="modal-avatar">👩</span>Amábile
@@ -1014,9 +1224,9 @@ setInterval(carregarAgendamentos, 30000);
       </button>
     </div>
     <div class="modal-acoes">
-      <button class="btn-cancelar" onclick="fecharModal()">Cancelar</button>
+      <button class="btn-cancelar" id="btnCancelarIdentificacao" onclick="fecharModal()" style="display:none;">Cancelar</button>
       <button class="btn-confirmar-assumir" id="btnConfirmarAssumir" onclick="confirmarAssumir()" disabled>
-        Confirmar e assumir
+        Confirmar
       </button>
     </div>
   </div>
@@ -1027,39 +1237,7 @@ setInterval(carregarAgendamentos, 30000);
   <div class="modal modal-detalhe">
     <div class="modal-titulo" id="detalhe-nome">—</div>
     <div class="modal-sub" id="detalhe-data">—</div>
-    <div class="modal-detalhe-corpo">
-      <div class="campo">
-        <div class="campo-label">Serviço</div>
-        <div class="campo-valor" id="detalhe-servico">—</div>
-      </div>
-      <div class="campo">
-        <div class="campo-label">Convênio</div>
-        <div class="campo-valor" id="detalhe-convenio">—</div>
-      </div>
-      <div class="campo">
-        <div class="campo-label">Médico</div>
-        <div class="campo-valor" id="detalhe-medico">—</div>
-      </div>
-      <div class="campo">
-        <div class="campo-label">Preferência</div>
-        <div class="campo-valor" id="detalhe-preferencia">—</div>
-      </div>
-      <div class="campo">
-        <div class="campo-label">Telefone</div>
-        <div class="campo-valor" id="detalhe-telefone">—</div>
-      </div>
-      <div class="campo">
-        <div class="campo-label">Nascimento</div>
-        <div class="campo-valor" id="detalhe-nascimento">—</div>
-      </div>
-      <div class="campo full">
-        <div class="campo-label">E-mail</div>
-        <div class="campo-valor" id="detalhe-email">—</div>
-      </div>
-      <div class="campo full">
-        <div class="campo-label">Atendido por</div>
-        <div class="campo-valor" id="detalhe-atendente">—</div>
-      </div>
+    <div class="modal-detalhe-corpo" id="detalhe-corpo">
     </div>
     <div class="modal-acoes">
       <button class="btn-cancelar" onclick="fecharModalDetalhe()">Fechar</button>
@@ -1067,6 +1245,7 @@ setInterval(carregarAgendamentos, 30000);
         💬 Abrir WhatsApp
       </button>
     </div>
+
   </div>
 </div>
 
