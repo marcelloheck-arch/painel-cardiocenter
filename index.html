@@ -1073,11 +1073,21 @@ async function concluir(id) {
   }
 }
 
+let _janelaWhatsApp = null;
+
 function abrirWhatsApp(tel, mensagem) {
   const texto = mensagem ? '&text=' + encodeURIComponent(mensagem) : '';
-  // Vai direto pra conversa dentro da sessão já logada do WhatsApp Web
-  // (sem passar pela tela intermediária do wa.me) e reaproveita a mesma aba.
-  window.open('https://web.whatsapp.com/send?phone=' + tel + texto, 'painel_whatsapp');
+  const url = 'https://web.whatsapp.com/send?phone=' + tel + texto;
+
+  // Se já temos uma janela aberta por nós e ela ainda está de pé, reaproveita:
+  // troca o conteúdo dela e traz pra frente, em vez de abrir uma nova.
+  if (_janelaWhatsApp && !_janelaWhatsApp.closed) {
+    _janelaWhatsApp.location.href = url;
+    _janelaWhatsApp.focus();
+  } else {
+    // Não existe janela nossa aberta (ou foi fechada) — abre uma nova e guarda a referência.
+    _janelaWhatsApp = window.open(url, 'painel_whatsapp');
+  }
 }
 
 function montarMensagemConfirmacao(a) {
