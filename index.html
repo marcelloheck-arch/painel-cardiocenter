@@ -1199,9 +1199,12 @@ function mostrarToast(msg, tipo) {
 }
 
 // Carrega ao abrir e atualiza a cada 30 segundos
-verificarIdentificacao();
-carregarAgendamentos();
-setInterval(carregarAgendamentos, 30000);
+// (aguarda o DOM inteiro, incluindo os modais mais abaixo, estar pronto)
+window.addEventListener('DOMContentLoaded', function() {
+  verificarIdentificacao();
+  carregarAgendamentos();
+  setInterval(carregarAgendamentos, 30000);
+});
 </script>
 
 <!-- MODAL SELETOR DE ATENDENTE -->
