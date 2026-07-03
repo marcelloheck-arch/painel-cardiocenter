@@ -784,6 +784,16 @@
 
   .modal-detalhe-corpo .campo.full { grid-column: 1 / -1; }
 
+  .modal-detalhe .modal-acoes {
+    flex-wrap: wrap;
+  }
+
+  .modal-detalhe .modal-acoes button {
+    flex: 1 1 auto;
+    font-size: 12px;
+    padding: 10px 8px;
+  }
+
   .modal-fechar-detalhe {
     width: 100%;
     padding: 10px;
@@ -1558,6 +1568,10 @@ function abrirDetalheConcluido(id) {
 
   document.getElementById('detalhe-corpo').innerHTML = corpoHTML;
   document.getElementById('detalhe-whatsapp-btn').onclick = () => abrirWhatsApp(telWhats, montarMensagemConfirmacao(a));
+  document.getElementById('detalhe-chat-btn').onclick = () => {
+    fecharModalDetalhe();
+    abrirChat(a.id, a.telefone || '', a.nome && a.nome.trim() !== '' ? a.nome : 'Paciente não identificado', false);
+  };
 
   document.getElementById('modalDetalhe').classList.add('visivel');
 }
@@ -1760,6 +1774,9 @@ window.addEventListener('DOMContentLoaded', function() {
     </div>
     <div class="modal-acoes">
       <button class="btn-cancelar" onclick="fecharModalDetalhe()">Fechar</button>
+      <button class="btn-confirmar-assumir" id="detalhe-chat-btn" style="background: var(--vermelho);">
+        💬 Ver conversa
+      </button>
       <button class="btn-confirmar-assumir" id="detalhe-whatsapp-btn" style="background: #25D366;">
         💬 Abrir WhatsApp
       </button>
