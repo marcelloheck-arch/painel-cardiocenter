@@ -1,0 +1,1892 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cardiocenter — Painel de Atendimento</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --vermelho: #C0392B;
+    --vermelho-escuro: #96281B;
+    --vermelho-claro: #FADBD8;
+    --cinza-fundo: #F4F6F8;
+    --cinza-borda: #DDE1E7;
+    --cinza-texto: #6B7280;
+    --preto: #1A1A2E;
+    --branco: #FFFFFF;
+    --verde: #27AE60;
+    --verde-claro: #D5F5E3;
+    --amarelo: #F39C12;
+    --amarelo-claro: #FDEBD0;
+    --azul: #2980B9;
+    --azul-claro: #D6EAF8;
+    --urgente: #E8590C;
+    --urgente-claro: #FFE8DA;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--cinza-fundo);
+    color: var(--preto);
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--branco);
+    border-bottom: 3px solid var(--vermelho);
+    padding: 0 32px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-icone {
+    width: 36px;
+    height: 36px;
+    background: var(--vermelho);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 18px;
+  }
+
+  .logo-texto {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--preto);
+    letter-spacing: -0.3px;
+  }
+
+  .logo-sub {
+    font-size: 12px;
+    color: var(--cinza-texto);
+    font-weight: 400;
+  }
+
+  .header-direita {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .btn-atualizar {
+    background: var(--cinza-fundo);
+    border: 1px solid var(--cinza-borda);
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--cinza-texto);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s;
+  }
+
+  .btn-atualizar:hover { background: var(--cinza-borda); color: var(--preto); }
+
+  .status-online {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--verde);
+    font-weight: 500;
+  }
+
+  .dot-online {
+    width: 8px;
+    height: 8px;
+    background: var(--verde);
+    border-radius: 50%;
+    animation: pulsar 2s infinite;
+  }
+
+  @keyframes pulsar {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* CONTADORES */
+  .contadores {
+    display: flex;
+    gap: 16px;
+    padding: 24px 32px 0;
+  }
+
+  .contador-card {
+    background: var(--branco);
+    border-radius: 12px;
+    padding: 16px 24px;
+    border: 1px solid var(--cinza-borda);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 180px;
+  }
+
+  .contador-card.contador-urgente {
+    border-color: var(--urgente);
+    background: var(--urgente-claro);
+  }
+
+  .contador-icone {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+  }
+
+  .contador-icone.pendente { background: var(--amarelo-claro); }
+  .contador-icone.atendimento { background: var(--azul-claro); }
+  .contador-icone.concluido { background: var(--verde-claro); }
+  .contador-icone.urgente { background: var(--branco); }
+
+  .contador-numero {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .contador-card.contador-urgente .contador-numero { color: var(--urgente); }
+
+  .contador-label {
+    font-size: 12px;
+    color: var(--cinza-texto);
+    margin-top: 2px;
+  }
+
+  .contador-card.contador-urgente .contador-label { color: var(--vermelho-escuro); font-weight: 600; }
+
+  /* FILTROS */
+  .filtros {
+    display: flex;
+    gap: 8px;
+    padding: 20px 32px 0;
+  }
+
+  .filtro-btn {
+    padding: 8px 18px;
+    border-radius: 20px;
+    border: 1.5px solid var(--cinza-borda);
+    background: var(--branco);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--cinza-texto);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .filtro-btn:hover, .filtro-btn.ativo {
+    background: var(--vermelho);
+    border-color: var(--vermelho);
+    color: white;
+  }
+
+  /* SECAO DE URGENCIA */
+  .secao-urgente {
+    padding: 20px 32px 0;
+  }
+
+  .secao-urgente-titulo {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--urgente);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .lista-urgente {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 16px;
+    margin-bottom: 8px;
+  }
+
+  @keyframes piscarBorda {
+    0%, 100% { border-color: var(--urgente); box-shadow: 0 0 0 0 rgba(232, 89, 12, 0.25); }
+    50% { border-color: var(--vermelho-escuro); box-shadow: 0 0 0 6px rgba(232, 89, 12, 0); }
+  }
+
+  .card-urgente {
+    background: var(--branco);
+    border-radius: 14px;
+    border: 2px solid var(--urgente);
+    overflow: hidden;
+    animation: piscarBorda 2s infinite;
+  }
+
+  .card-urgente-header {
+    padding: 14px 20px;
+    background: var(--urgente-claro);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .card-urgente-nome {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--preto);
+  }
+
+  .card-urgente-tag {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--branco);
+    background: var(--urgente);
+    padding: 3px 9px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+
+  .card-urgente-pergunta {
+    padding: 14px 20px;
+    font-size: 14px;
+    color: var(--preto);
+    line-height: 1.4;
+  }
+
+  .card-urgente-pergunta .rotulo {
+    display: block;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--cinza-texto);
+    margin-bottom: 4px;
+  }
+
+  .card-urgente-footer {
+    padding: 12px 20px;
+    border-top: 1px solid var(--cinza-fundo);
+  }
+
+  .btn-responder-urgente {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    background: var(--urgente);
+    color: white;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .btn-responder-urgente:hover { background: var(--vermelho-escuro); }
+
+  /* LISTA */
+  .lista {
+    padding: 20px 32px 32px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 16px;
+  }
+
+  /* CARD */
+  .card {
+    background: var(--branco);
+    border-radius: 14px;
+    border: 1.5px solid var(--cinza-borda);
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+  }
+
+  .card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+
+  .card.pendente { border-left: 4px solid var(--amarelo); }
+  .card.em_atendimento { border-left: 4px solid var(--azul); }
+  .card.concluido { border-left: 4px solid var(--verde); opacity: 0.75; }
+
+  .card-header {
+    padding: 16px 20px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 1px solid var(--cinza-fundo);
+  }
+
+  .card-nome {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--preto);
+  }
+
+  .card-data {
+    font-size: 11px;
+    color: var(--cinza-texto);
+    margin-top: 2px;
+  }
+
+  .badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+
+  .badge.pendente { background: var(--amarelo-claro); color: #7D6608; }
+  .badge.em_atendimento { background: var(--azul-claro); color: #1A5276; }
+  .badge.concluido { background: var(--verde-claro); color: #1D6A39; }
+
+  .card-body {
+    padding: 14px 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .campo {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .campo-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--cinza-texto);
+  }
+
+  .campo-valor {
+    font-size: 13px;
+    color: var(--preto);
+    font-weight: 500;
+  }
+
+  .campo.full { grid-column: 1 / -1; }
+
+  .card-footer {
+    padding: 12px 20px;
+    border-top: 1px solid var(--cinza-fundo);
+    display: flex;
+    gap: 8px;
+  }
+
+  .btn {
+    flex: 1;
+    padding: 9px 12px;
+    border-radius: 8px;
+    border: none;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .btn-chat {
+    background: var(--vermelho);
+    color: white;
+    flex: 0 0 auto;
+    padding: 9px 14px;
+  }
+
+  .btn-chat:hover { background: var(--vermelho-escuro); }
+
+  .btn-whatsapp {
+    background: #25D366;
+    color: white;
+    flex: 0 0 auto;
+    padding: 9px 14px;
+  }
+
+  .btn-whatsapp:hover { background: #1da851; }
+
+  .btn-assumir {
+    background: var(--azul);
+    color: white;
+  }
+
+  .btn-assumir:hover { background: #1A5276; }
+
+  .btn-concluir {
+    background: var(--verde);
+    color: white;
+  }
+
+  .btn-concluir:hover { background: #1D6A39; }
+
+  .btn-desabilitado {
+    background: var(--cinza-fundo);
+    color: var(--cinza-texto);
+    cursor: default;
+  }
+
+  /* ESTADOS */
+  .estado-vazio {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--cinza-texto);
+  }
+
+  .estado-vazio .icone { font-size: 48px; margin-bottom: 12px; }
+  .estado-vazio .titulo { font-size: 16px; font-weight: 600; color: var(--preto); }
+  .estado-vazio .subtitulo { font-size: 13px; margin-top: 4px; }
+
+  .carregando {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px;
+    color: var(--cinza-texto);
+    font-size: 14px;
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--preto);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s;
+    z-index: 999;
+    pointer-events: none;
+  }
+
+  .toast.visivel {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .toast.sucesso { background: var(--verde); }
+  .toast.erro { background: var(--vermelho); }
+  .toast.aviso { background: var(--amarelo); color: var(--preto); }
+
+  /* MODAL SELETOR DE ATENDENTE */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 300;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.visivel { display: flex; }
+
+  .modal {
+    background: var(--branco);
+    border-radius: 16px;
+    padding: 28px;
+    width: 340px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  }
+
+  .modal-titulo {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--preto);
+    margin-bottom: 6px;
+  }
+
+  .modal-sub {
+    font-size: 13px;
+    color: var(--cinza-texto);
+    margin-bottom: 20px;
+  }
+
+  .atendentes-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .atendente-btn {
+    padding: 14px 10px;
+    border-radius: 10px;
+    border: 2px solid var(--cinza-borda);
+    background: var(--cinza-fundo);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--preto);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+  }
+
+  .atendente-btn:hover {
+    border-color: var(--vermelho);
+    background: var(--vermelho-claro);
+    color: var(--vermelho);
+  }
+
+  .atendente-btn.selecionado {
+    border-color: var(--vermelho);
+    background: var(--vermelho);
+    color: white;
+  }
+
+  .modal-avatar {
+    font-size: 20px;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .modal-acoes {
+    display: flex;
+    gap: 10px;
+  }
+
+  .btn-cancelar {
+    flex: 1;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1.5px solid var(--cinza-borda);
+    background: transparent;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--cinza-texto);
+    cursor: pointer;
+  }
+
+  .btn-confirmar-assumir {
+    flex: 2;
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    background: var(--vermelho);
+    font-size: 13px;
+    font-weight: 600;
+    color: white;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .btn-confirmar-assumir:hover { background: var(--vermelho-escuro); }
+  .btn-confirmar-assumir:disabled { background: var(--cinza-borda); cursor: default; }
+
+  /* TAG DE ATENDENTE NO CARD */
+  .atendente-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--azul-claro);
+    color: #1A5276;
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-top: 6px;
+  }
+
+  /* TAG DE TIPO (CANCELAMENTO / REMARCAÇÃO) */
+  .tipo-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-top: 6px;
+  }
+
+  .tipo-tag.cancelamento {
+    background: var(--vermelho-claro);
+    color: var(--vermelho-escuro);
+  }
+
+  .tipo-tag.remarcacao {
+    background: #E8DAEF;
+    color: #6C3483;
+  }
+
+  .item-concluido-tipo {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    margin-left: 6px;
+  }
+
+  .item-concluido-tipo.cancelamento { color: var(--vermelho-escuro); }
+  .item-concluido-tipo.remarcacao { color: #6C3483; }
+  .item-concluido-tipo.duvida_valor { color: var(--urgente); }
+
+  /* LAYOUT PRINCIPAL + SIDEBAR */
+  .layout {
+    display: flex;
+    align-items: flex-start;
+    gap: 0;
+    padding: 0 32px 32px;
+  }
+
+  .coluna-principal {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .coluna-principal .filtros { padding: 20px 0 0; }
+  .coluna-principal .lista { padding: 20px 0 0; }
+  .coluna-principal .secao-urgente { padding: 20px 0 0; }
+
+  /* SIDEBAR DE CONCLUÍDOS */
+  .sidebar-concluidos {
+    width: 300px;
+    flex-shrink: 0;
+    margin-left: 24px;
+    background: var(--branco);
+    border: 1px solid var(--cinza-borda);
+    border-radius: 14px;
+    overflow: hidden;
+    position: sticky;
+    top: 88px;
+    max-height: calc(100vh - 110px);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sidebar-header {
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--cinza-fundo);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--verde-claro);
+  }
+
+  .sidebar-titulo {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1D6A39;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .sidebar-contagem {
+    font-size: 11px;
+    font-weight: 700;
+    color: #1D6A39;
+    background: var(--branco);
+    border-radius: 20px;
+    padding: 2px 9px;
+  }
+
+  .sidebar-lista {
+    overflow-y: auto;
+    flex: 1;
+    padding: 8px;
+  }
+
+  /* BADGE DE IDENTIFICAÇÃO DA ATENDENTE */
+  .badge-identificacao {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--azul-claro);
+    color: #1A5276;
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .badge-identificacao .trocar-link {
+    background: none;
+    border: none;
+    color: #1A5276;
+    text-decoration: underline;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .sidebar-vazio {
+    text-align: center;
+    padding: 30px 12px;
+    color: var(--cinza-texto);
+    font-size: 12px;
+  }
+
+  .item-concluido {
+    width: 100%;
+    text-align: left;
+    background: var(--cinza-fundo);
+    border: 1px solid var(--cinza-borda);
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .item-concluido:hover {
+    border-color: var(--verde);
+    background: var(--verde-claro);
+  }
+
+  .item-concluido-nome {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--preto);
+  }
+
+  .item-concluido-info {
+    font-size: 11px;
+    color: var(--cinza-texto);
+    margin-top: 2px;
+  }
+
+  /* MODAL DE DETALHE (visualização de concluído) */
+  .modal-detalhe { width: 380px; }
+
+  .modal-detalhe-corpo {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .modal-detalhe-corpo .campo.full { grid-column: 1 / -1; }
+
+  .modal-detalhe .modal-acoes {
+    flex-wrap: wrap;
+  }
+
+  .modal-detalhe .modal-acoes button {
+    flex: 1 1 auto;
+    font-size: 12px;
+    padding: 10px 8px;
+  }
+
+  .modal-fechar-detalhe {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1.5px solid var(--cinza-borda);
+    background: transparent;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--cinza-texto);
+    cursor: pointer;
+  }
+
+  /* MODAL DE CHAT */
+  .modal-chat {
+    width: 440px;
+    max-width: 92vw;
+    height: 600px;
+    max-height: 85vh;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .chat-header {
+    padding: 16px 20px;
+    background: var(--vermelho);
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .chat-header-info .chat-nome {
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .chat-header-info .chat-telefone {
+    font-size: 11px;
+    opacity: 0.85;
+    margin-top: 1px;
+  }
+
+  .chat-fechar {
+    background: rgba(255,255,255,0.15);
+    border: none;
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .chat-fechar:hover { background: rgba(255,255,255,0.3); }
+
+  .chat-corpo {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: var(--cinza-fundo);
+  }
+
+  .chat-carregando, .chat-vazio {
+    text-align: center;
+    color: var(--cinza-texto);
+    font-size: 13px;
+    padding: 30px 10px;
+  }
+
+  .bolha {
+    max-width: 78%;
+    padding: 9px 13px;
+    border-radius: 14px;
+    font-size: 13px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .bolha-hora {
+    font-size: 10px;
+    opacity: 0.6;
+    margin-top: 4px;
+    display: block;
+  }
+
+  .bolha.paciente {
+    align-self: flex-start;
+    background: var(--branco);
+    border: 1px solid var(--cinza-borda);
+    color: var(--preto);
+    border-bottom-left-radius: 4px;
+  }
+
+  .bolha.agente {
+    align-self: flex-start;
+    background: var(--azul-claro);
+    color: #1A5276;
+    border-bottom-left-radius: 4px;
+  }
+
+  .bolha.agente::before {
+    content: 'Agente automático';
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 3px;
+    opacity: 0.75;
+  }
+
+  .bolha.atendente {
+    align-self: flex-end;
+    background: var(--vermelho);
+    color: white;
+    border-bottom-right-radius: 4px;
+  }
+
+  .chat-rodape {
+    padding: 12px 14px;
+    border-top: 1px solid var(--cinza-borda);
+    background: var(--branco);
+    flex-shrink: 0;
+  }
+
+  .chat-input-linha {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .chat-input {
+    flex: 1;
+    padding: 10px 14px;
+    border-radius: 20px;
+    border: 1.5px solid var(--cinza-borda);
+    font-size: 13px;
+    font-family: inherit;
+    resize: none;
+    max-height: 180px;
+  }
+
+  .chat-input:focus {
+    outline: none;
+    border-color: var(--vermelho);
+  }
+
+  .chat-btn-enviar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: var(--vermelho);
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+  }
+
+  .chat-btn-enviar:hover { background: var(--vermelho-escuro); }
+  .chat-btn-enviar:disabled { background: var(--cinza-borda); cursor: default; }
+
+  .chat-acoes-rodape {
+    display: flex;
+    gap: 8px;
+  }
+
+  .chat-acoes-rodape .btn {
+    padding: 8px;
+    font-size: 12px;
+  }
+
+  @media (max-width: 900px) {
+    .layout { flex-direction: column; padding: 0 16px 24px; }
+    .sidebar-concluidos { width: 100%; margin-left: 0; margin-top: 20px; position: static; max-height: none; }
+    .modal-chat { width: 100%; height: 100%; max-height: 100%; border-radius: 0; }
+  }
+
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icone">❤</div>
+    <div>
+      <div class="logo-texto">Cardiocenter</div>
+      <div class="logo-sub">Painel de Atendimento</div>
+    </div>
+  </div>
+  <div class="header-direita">
+    <div class="badge-identificacao" id="badgeIdentificacao">
+      👩 Você é: <span id="nomeAtendenteAtual">—</span>
+      <button class="trocar-link" onclick="abrirTrocaIdentificacao()">trocar</button>
+    </div>
+    <div class="status-online">
+      <div class="dot-online"></div>
+      Sistema ativo
+    </div>
+    <button class="btn-atualizar" onclick="carregarAgendamentos()">
+      ↻ Atualizar
+    </button>
+  </div>
+</header>
+
+<div class="contadores">
+  <div class="contador-card contador-urgente" id="cardContadorUrgente">
+    <div class="contador-icone urgente">🔔</div>
+    <div>
+      <div class="contador-numero" id="cnt-urgente">—</div>
+      <div class="contador-label">Aguardando resposta</div>
+    </div>
+  </div>
+  <div class="contador-card">
+    <div class="contador-icone pendente">⏳</div>
+    <div>
+      <div class="contador-numero" id="cnt-pendente">—</div>
+      <div class="contador-label">Aguardando</div>
+    </div>
+  </div>
+  <div class="contador-card">
+    <div class="contador-icone atendimento">📞</div>
+    <div>
+      <div class="contador-numero" id="cnt-atendimento">—</div>
+      <div class="contador-label">Em atendimento</div>
+    </div>
+  </div>
+  <div class="contador-card">
+    <div class="contador-icone concluido">✅</div>
+    <div>
+      <div class="contador-numero" id="cnt-concluido">—</div>
+      <div class="contador-label">Concluídos hoje</div>
+    </div>
+  </div>
+</div>
+
+<div class="layout">
+  <div class="coluna-principal">
+
+    <div class="secao-urgente" id="secaoUrgente" style="display:none;">
+      <div class="secao-urgente-titulo">🔔 Pacientes aguardando resposta</div>
+      <div class="lista-urgente" id="listaUrgente"></div>
+    </div>
+
+    <div class="filtros">
+      <button class="filtro-btn ativo" onclick="filtrar('todos', this)">Todos</button>
+      <button class="filtro-btn" onclick="filtrar('pendente', this)">Aguardando</button>
+      <button class="filtro-btn" onclick="filtrar('em_atendimento', this)">Em atendimento</button>
+    </div>
+
+    <div class="lista" id="lista">
+      <div class="carregando">Carregando pré-agendamentos...</div>
+    </div>
+  </div>
+
+  <div class="sidebar-concluidos">
+    <div class="sidebar-header">
+      <div class="sidebar-titulo">✅ Concluídos</div>
+      <div class="sidebar-contagem" id="sidebar-contagem">0</div>
+    </div>
+    <div class="sidebar-lista" id="sidebar-lista">
+      <div class="sidebar-vazio">Nenhum concluído ainda</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const WEBHOOK_URL = 'https://coldbloodedchameleon-n8n.cloudfy.live/webhook/painel-agendamentos';
+
+/* ============================================================
+   CÓDIGO DE ACESSO (token compartilhado, validado no n8n)
+   ============================================================ */
+const CHAVE_TOKEN = 'cardiocenter_token_acesso';
+
+function obterToken() {
+  return localStorage.getItem(CHAVE_TOKEN) || '';
+}
+
+function mostrarTelaToken(mensagemErro) {
+  const modal = document.getElementById('modalToken');
+  if (modal.classList.contains('visivel') && !mensagemErro) return; // já está aberta, não reseta o campo
+  const erroEl = document.getElementById('tokenErro');
+  erroEl.textContent = mensagemErro || '';
+  erroEl.style.display = mensagemErro ? 'block' : 'none';
+  document.getElementById('tokenInput').value = '';
+  modal.classList.add('visivel');
+  setTimeout(() => document.getElementById('tokenInput').focus(), 100);
+}
+
+function confirmarToken() {
+  const valor = document.getElementById('tokenInput').value.trim();
+  if (!valor) return;
+  localStorage.setItem(CHAVE_TOKEN, valor);
+  document.getElementById('modalToken').classList.remove('visivel');
+  carregarAgendamentos();
+}
+
+function tokenInputTeclado(evento) {
+  if (evento.key === 'Enter') { evento.preventDefault(); confirmarToken(); }
+}
+
+// Retorna true (e reabre a tela de código) se o webhook recusou o token
+function respostaNaoAutorizada(data) {
+  if (data && data.erro === 'nao_autorizado') {
+    localStorage.removeItem(CHAVE_TOKEN);
+    mostrarTelaToken('Código incorreto ou expirado. Digite novamente.');
+    return true;
+  }
+  return false;
+}
+
+let todosAgendamentos = [];
+let filtroAtivo = 'todos';
+
+async function carregarAgendamentos() {
+  if (!obterToken()) { mostrarTelaToken(); return; }
+  try {
+    const res = await fetch(WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ acao: 'listar', token: obterToken() })
+    });
+    const data = await res.json();
+    if (respostaNaoAutorizada(data)) return;
+    todosAgendamentos = data.agendamentos || [];
+    atualizarContadores();
+    renderizarSecaoUrgente();
+    renderizarLista();
+    renderizarConcluidos();
+  } catch (e) {
+    document.getElementById('lista').innerHTML = `
+      <div class="estado-vazio">
+        <div class="icone">⚠️</div>
+        <div class="titulo">Erro ao carregar</div>
+        <div class="subtitulo">Verifique se o workflow está ativo no N8N</div>
+      </div>`;
+  }
+}
+
+function ehUrgente(a) {
+  return a.tipo_solicitacao === 'duvida_valor' && a.status !== 'concluido';
+}
+
+function atualizarContadores() {
+  const hoje = new Date().toDateString();
+  const urgentes = todosAgendamentos.filter(ehUrgente).length;
+  const pendentes = todosAgendamentos.filter(a => a.status === 'pendente' && a.tipo_solicitacao !== 'duvida_valor').length;
+  const atendimento = todosAgendamentos.filter(a => a.status === 'em_atendimento' && a.tipo_solicitacao !== 'duvida_valor').length;
+  const concluidos = todosAgendamentos.filter(a => {
+    return a.status === 'concluido' && new Date(a.updated_at).toDateString() === hoje;
+  }).length;
+
+  document.getElementById('cnt-urgente').textContent = urgentes;
+  document.getElementById('cnt-pendente').textContent = pendentes;
+  document.getElementById('cnt-atendimento').textContent = atendimento;
+  document.getElementById('cnt-concluido').textContent = concluidos;
+
+  document.getElementById('cardContadorUrgente').style.display = urgentes > 0 ? 'flex' : 'none';
+}
+
+function renderizarSecaoUrgente() {
+  const secao = document.getElementById('secaoUrgente');
+  const lista = document.getElementById('listaUrgente');
+  const urgentes = todosAgendamentos.filter(ehUrgente);
+
+  if (urgentes.length === 0) {
+    secao.style.display = 'none';
+    return;
+  }
+
+  secao.style.display = 'block';
+  lista.innerHTML = urgentes.map(a => criarCardUrgente(a)).join('');
+}
+
+function criarCardUrgente(a) {
+  const nome = a.nome && a.nome.trim() !== '' ? a.nome : 'Paciente não identificado';
+  const pergunta = a.pergunta || 'Pergunta sobre valor (sem detalhe registrado)';
+  return `
+    <div class="card-urgente" id="card-${a.id}">
+      <div class="card-urgente-header">
+        <div class="card-urgente-nome">${nome}</div>
+        <div class="card-urgente-tag">Dúvida de valor</div>
+      </div>
+      <div class="card-urgente-pergunta">
+        <span class="rotulo">Perguntou</span>
+        "${pergunta}"
+      </div>
+      <div class="card-urgente-footer">
+        <button class="btn-responder-urgente" onclick="abrirChat(${a.id}, '${(a.telefone||'').replace(/'/g,"")}', '${nome.replace(/'/g,"")}', true)">💬 Responder agora</button>
+      </div>
+    </div>`;
+}
+
+function filtrar(status, btn) {
+  filtroAtivo = status;
+  document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('ativo'));
+  btn.classList.add('ativo');
+  renderizarLista();
+}
+
+function renderizarLista() {
+  const lista = document.getElementById('lista');
+  const naoConcluidos = todosAgendamentos.filter(a => a.status !== 'concluido' && a.tipo_solicitacao !== 'duvida_valor');
+  const filtrados = filtroAtivo === 'todos'
+    ? naoConcluidos
+    : naoConcluidos.filter(a => a.status === filtroAtivo);
+
+  if (filtrados.length === 0) {
+    lista.innerHTML = `
+      <div class="estado-vazio">
+        <div class="icone">📋</div>
+        <div class="titulo">Nenhum pré-agendamento pendente</div>
+        <div class="subtitulo">Os novos pré-agendamentos aparecerão automaticamente</div>
+      </div>`;
+    return;
+  }
+
+  lista.innerHTML = filtrados.map(a => criarCard(a)).join('');
+}
+
+function renderizarConcluidos() {
+  const sidebarLista = document.getElementById('sidebar-lista');
+  const sidebarContagem = document.getElementById('sidebar-contagem');
+  const concluidos = todosAgendamentos
+    .filter(a => a.status === 'concluido')
+    .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+
+  sidebarContagem.textContent = concluidos.length;
+
+  if (concluidos.length === 0) {
+    sidebarLista.innerHTML = '<div class="sidebar-vazio">Nenhum concluído ainda</div>';
+    return;
+  }
+
+  sidebarLista.innerHTML = concluidos.map(a => {
+    const data = new Date(a.updated_at || a.created_at);
+    const dataFormatada = data.toLocaleDateString('pt-BR') + ' às ' + data.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+    const tipo = a.tipo_solicitacao || 'novo';
+    const tipoLabels = { cancelamento: 'Cancelamento', remarcacao: 'Remarcação', duvida_valor: 'Dúvida de valor' };
+    const linhaInfo = tipo === 'novo' ? (a.servico || '—') : (tipoLabels[tipo] || tipo);
+    return `
+      <button class="item-concluido" onclick="abrirDetalheConcluido(${a.id})">
+        <div class="item-concluido-nome">${a.nome || '—'}</div>
+        <div class="item-concluido-info">${linhaInfo} · ${dataFormatada}</div>
+      </button>`;
+  }).join('');
+}
+
+function criarCard(a) {
+  const data = new Date(a.created_at);
+  const dataFormatada = data.toLocaleDateString('pt-BR') + ' às ' + data.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+  const tel = (a.telefone || '').replace(/\D/g, '').replace(/^55/, '');
+  const telWhats = '55' + tel;
+  const tipo = a.tipo_solicitacao || 'novo';
+  const nome = a.nome && a.nome.trim() !== '' ? a.nome : 'Paciente não identificado';
+
+  const badges = {
+    pendente: 'Aguardando',
+    em_atendimento: 'Em atendimento',
+    concluido: 'Concluído'
+  };
+
+  const tipoLabels = { cancelamento: '❌ Cancelamento', remarcacao: '🔄 Remarcação' };
+  const tipoTagHTML = (tipo !== 'novo')
+    ? `<div class="tipo-tag ${tipo}">${tipoLabels[tipo] || tipo}</div>`
+    : '';
+
+  const mensagemJSON = JSON.stringify(montarMensagemConfirmacao(a)).replace(/"/g, '&quot;');
+  const nomeAttr = nome.replace(/'/g, "");
+  const telAttr = (a.telefone || '').replace(/'/g, "");
+
+  let botoesHTML = '';
+
+  if (a.status === 'pendente') {
+    botoesHTML = `
+      <button class="btn btn-chat" onclick="abrirChat(${a.id}, '${telAttr}', '${nomeAttr}', false)" title="Conversar pelo painel">💬</button>
+      <button class="btn btn-whatsapp" onclick='abrirWhatsApp("${telWhats}", ${mensagemJSON})' title="Abrir WhatsApp (para arquivos)">📎</button>
+      <button class="btn btn-assumir" onclick="assumir(${a.id})">📞 Assumir atendimento</button>`;
+  } else if (a.status === 'em_atendimento') {
+    botoesHTML = `
+      <button class="btn btn-chat" onclick="abrirChat(${a.id}, '${telAttr}', '${nomeAttr}', false)" title="Conversar pelo painel">💬</button>
+      <button class="btn btn-whatsapp" onclick='abrirWhatsApp("${telWhats}", ${mensagemJSON})' title="Abrir WhatsApp (para arquivos)">📎</button>
+      <button class="btn btn-concluir" onclick="concluir(${a.id})">✅ Marcar como concluído</button>`;
+  } else {
+    botoesHTML = `
+      <button class="btn btn-chat" onclick="abrirChat(${a.id}, '${telAttr}', '${nomeAttr}', false)" title="Conversar pelo painel">💬</button>
+      <button class="btn btn-whatsapp" onclick='abrirWhatsApp("${telWhats}", ${mensagemJSON})' title="Abrir WhatsApp (para arquivos)">📎</button>
+      <button class="btn btn-desabilitado" disabled>✅ Concluído</button>`;
+  }
+
+  let corpoHTML = '';
+
+  if (tipo === 'novo') {
+    corpoHTML = `
+        <div class="campo">
+          <div class="campo-label">Serviço</div>
+          <div class="campo-valor">${a.servico || '—'}</div>
+        </div>
+        <div class="campo">
+          <div class="campo-label">Convênio</div>
+          <div class="campo-valor">${a.convenio || '—'}</div>
+        </div>
+        <div class="campo">
+          <div class="campo-label">Médico</div>
+          <div class="campo-valor">${a.medico || '—'}</div>
+        </div>
+        <div class="campo">
+          <div class="campo-label">Preferência</div>
+          <div class="campo-valor">${a.preferencia || '—'}</div>
+        </div>
+        <div class="campo">
+          <div class="campo-label">Telefone</div>
+          <div class="campo-valor">${tel || '—'}</div>
+        </div>
+        <div class="campo">
+          <div class="campo-label">Nascimento</div>
+          <div class="campo-valor">${a.nascimento || '—'}</div>
+        </div>
+        <div class="campo full">
+          <div class="campo-label">E-mail</div>
+          <div class="campo-valor">${a.email || '—'}</div>
+        </div>`;
+  } else {
+    corpoHTML = `
+        <div class="campo full">
+          <div class="campo-label">Data da consulta/exame a alterar</div>
+          <div class="campo-valor">${a.data_consulta_atual || '—'}</div>
+        </div>
+        ${tipo === 'remarcacao' ? `
+        <div class="campo full">
+          <div class="campo-label">Nova data pretendida</div>
+          <div class="campo-valor">${a.nova_data_pretendida || '—'}</div>
+        </div>` : ''}
+        <div class="campo full">
+          <div class="campo-label">Telefone</div>
+          <div class="campo-valor">${tel || '—'}</div>
+        </div>`;
+  }
+
+  return `
+    <div class="card ${a.status}" id="card-${a.id}">
+      <div class="card-header">
+        <div>
+          <div class="card-nome">${nome}</div>
+          <div class="card-data">${dataFormatada}</div>
+        ${tipoTagHTML}
+        ${a.atendente && a.status === 'em_atendimento' ? '<div class="atendente-tag">👩 ' + a.atendente + '</div>' : ''}
+        </div>
+        <span class="badge ${a.status}">${badges[a.status] || a.status}</span>
+      </div>
+      <div class="card-body">
+        ${corpoHTML}
+      </div>
+      <div class="card-footer">
+        ${botoesHTML}
+      </div>
+    </div>`;
+}
+
+let _idParaAssumir = null;
+let _atendenteSelecioanda = null;
+let _trocandoIdentificacao = false;
+
+const CHAVE_ATENDENTE = 'cardiocenter_atendente';
+
+function obterAtendenteIdentificada() {
+  return localStorage.getItem(CHAVE_ATENDENTE);
+}
+
+function verificarIdentificacao() {
+  const atual = obterAtendenteIdentificada();
+  if (atual) {
+    document.getElementById('nomeAtendenteAtual').textContent = atual;
+    document.getElementById('badgeIdentificacao').style.display = 'flex';
+  } else {
+    document.getElementById('badgeIdentificacao').style.display = 'none';
+    abrirModalIdentificacao(false);
+  }
+}
+
+function abrirModalIdentificacao(trocando) {
+  _trocandoIdentificacao = trocando;
+  document.querySelectorAll('.atendente-btn').forEach(b => b.classList.remove('selecionado'));
+  document.getElementById('btnConfirmarAssumir').disabled = true;
+  document.getElementById('modalTitulo').textContent = trocando ? 'Trocar identificação' : 'Quem está usando este computador?';
+  document.getElementById('modalSub').textContent = trocando
+    ? 'Selecione quem vai usar este computador agora'
+    : 'Selecione seu nome — vamos lembrar disso neste computador';
+  document.getElementById('btnCancelarIdentificacao').style.display = trocando ? 'block' : 'none';
+  document.getElementById('modalAtendente').classList.add('visivel');
+}
+
+function abrirTrocaIdentificacao() {
+  abrirModalIdentificacao(true);
+}
+
+function assumir(id) {
+  const atendente = obterAtendenteIdentificada();
+  if (!atendente) {
+    _idParaAssumir = id;
+    abrirModalIdentificacao(false);
+    return;
+  }
+  return executarAssumir(id, atendente);
+}
+
+function selecionarAtendente(nome, btn) {
+  _atendenteSelecioanda = nome;
+  document.querySelectorAll('.atendente-btn').forEach(b => b.classList.remove('selecionado'));
+  btn.classList.add('selecionado');
+  document.getElementById('btnConfirmarAssumir').disabled = false;
+}
+
+function fecharModal() {
+  document.getElementById('modalAtendente').classList.remove('visivel');
+}
+
+async function confirmarAssumir() {
+  const nome = _atendenteSelecioanda;
+  if (!nome) return;
+
+  localStorage.setItem(CHAVE_ATENDENTE, nome);
+  verificarIdentificacao();
+  fecharModal();
+
+  if (_idParaAssumir) {
+    const id = _idParaAssumir;
+    _idParaAssumir = null;
+    await executarAssumir(id, nome);
+  }
+}
+
+async function executarAssumir(id, atendente) {
+  const card = document.getElementById('card-' + id);
+  if (card) {
+    const btn = card.querySelector('.btn-assumir');
+    if (btn) { btn.disabled = true; btn.textContent = 'Verificando...'; }
+  }
+
+  try {
+    const res = await fetch(WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ acao: 'assumir', id, atendente, token: obterToken() })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      mostrarToast('✅ Assumido por ' + atendente + '!', 'sucesso');
+    } else {
+      mostrarToast('⚠️ ' + data.mensagem, 'erro');
+    }
+    await carregarAgendamentos();
+    return data.success;
+  } catch (e) {
+    mostrarToast('Erro ao assumir. Tente novamente.', 'erro');
+    await carregarAgendamentos();
+    return false;
+  }
+}
+
+async function concluir(id) {
+  try {
+    await fetch(WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ acao: 'concluir', id, token: obterToken() })
+    });
+    mostrarToast('Marcado como concluído!', 'sucesso');
+    await carregarAgendamentos();
+  } catch (e) {
+    mostrarToast('Erro ao concluir. Tente novamente.', 'erro');
+  }
+}
+
+let _janelaWhatsApp = null;
+
+function abrirWhatsApp(tel, mensagem) {
+  const texto = mensagem ? '&text=' + encodeURIComponent(mensagem) : '';
+  const url = 'https://web.whatsapp.com/send?phone=' + tel + texto;
+
+  if (_janelaWhatsApp && !_janelaWhatsApp.closed) {
+    _janelaWhatsApp.location.href = url;
+    _janelaWhatsApp.focus();
+  } else {
+    _janelaWhatsApp = window.open(url, 'painel_whatsapp');
+  }
+}
+
+function montarMensagemConfirmacao(a) {
+  const tipo = a.tipo_solicitacao || 'novo';
+  const primeiroNome = a.nome ? a.nome.split(' ')[0] : '';
+
+  if (tipo === 'cancelamento') {
+    let msg = `Olá${primeiroNome ? ', ' + primeiroNome : ''}! Aqui é da Cardiocenter.`;
+    msg += `\n\nRecebemos seu pedido de cancelamento da consulta/exame do dia ${a.data_consulta_atual || '[data]'}.`;
+    msg += `\n\nConfirmando o cancelamento?`;
+    return msg;
+  }
+
+  if (tipo === 'remarcacao') {
+    let msg = `Olá${primeiroNome ? ', ' + primeiroNome : ''}! Aqui é da Cardiocenter.`;
+    msg += `\n\nRecebemos seu pedido de remarcação da consulta/exame do dia ${a.data_consulta_atual || '[data]'}.`;
+    msg += `\n\nVamos verificar disponibilidade para ${a.nova_data_pretendida || '[nova data]'} e já te confirmamos!`;
+    return msg;
+  }
+
+  let msg = `Olá${primeiroNome ? ', ' + primeiroNome : ''}! Aqui é da Cardiocenter.`;
+  msg += `\n\nSeu agendamento foi confirmado:`;
+  if (a.servico) msg += `\n📋 Serviço: ${a.servico}`;
+  if (a.medico) msg += `\n👨‍⚕️ Médico: ${a.medico}`;
+  if (a.convenio) msg += `\n💳 Convênio: ${a.convenio}`;
+  msg += `\n📅 Data: [DIGITE A DATA AQUI]`;
+  msg += `\n🕐 Horário: [DIGITE O HORÁRIO AQUI]`;
+  msg += `\n\nQualquer dúvida, estamos à disposição!`;
+  return msg;
+}
+
+function abrirDetalheConcluido(id) {
+  const a = todosAgendamentos.find(x => x.id === id);
+  if (!a) return;
+
+  const data = new Date(a.created_at);
+  const dataFormatada = data.toLocaleDateString('pt-BR') + ' às ' + data.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+  const tel = (a.telefone || '').replace(/\D/g, '').replace(/^55/, '');
+  const telWhats = '55' + tel;
+  const tipo = a.tipo_solicitacao || 'novo';
+
+  document.getElementById('detalhe-nome').textContent = a.nome || '—';
+  document.getElementById('detalhe-data').textContent = dataFormatada;
+
+  let corpoHTML = '';
+  if (tipo === 'novo') {
+    corpoHTML = `
+      <div class="campo">
+        <div class="campo-label">Serviço</div>
+        <div class="campo-valor">${a.servico || '—'}</div>
+      </div>
+      <div class="campo">
+        <div class="campo-label">Convênio</div>
+        <div class="campo-valor">${a.convenio || '—'}</div>
+      </div>
+      <div class="campo">
+        <div class="campo-label">Médico</div>
+        <div class="campo-valor">${a.medico || '—'}</div>
+      </div>
+      <div class="campo">
+        <div class="campo-label">Preferência</div>
+        <div class="campo-valor">${a.preferencia || '—'}</div>
+      </div>
+      <div class="campo">
+        <div class="campo-label">Telefone</div>
+        <div class="campo-valor">${tel || '—'}</div>
+      </div>
+      <div class="campo">
+        <div class="campo-label">Nascimento</div>
+        <div class="campo-valor">${a.nascimento || '—'}</div>
+      </div>
+      <div class="campo full">
+        <div class="campo-label">E-mail</div>
+        <div class="campo-valor">${a.email || '—'}</div>
+      </div>`;
+  } else if (tipo === 'duvida_valor') {
+    corpoHTML = `
+      <div class="campo full">
+        <div class="campo-label">Pergunta</div>
+        <div class="campo-valor">${a.pergunta || '—'}</div>
+      </div>
+      <div class="campo full">
+        <div class="campo-label">Telefone</div>
+        <div class="campo-valor">${tel || '—'}</div>
+      </div>`;
+  } else {
+    const tipoLabels = { cancelamento: 'Cancelamento', remarcacao: 'Remarcação' };
+    corpoHTML = `
+      <div class="campo full">
+        <div class="campo-label">Tipo de solicitação</div>
+        <div class="campo-valor">${tipoLabels[tipo] || tipo}</div>
+      </div>
+      <div class="campo full">
+        <div class="campo-label">Data da consulta/exame a alterar</div>
+        <div class="campo-valor">${a.data_consulta_atual || '—'}</div>
+      </div>
+      ${tipo === 'remarcacao' ? `
+      <div class="campo full">
+        <div class="campo-label">Nova data pretendida</div>
+        <div class="campo-valor">${a.nova_data_pretendida || '—'}</div>
+      </div>` : ''}
+      <div class="campo full">
+        <div class="campo-label">Telefone</div>
+        <div class="campo-valor">${tel || '—'}</div>
+      </div>`;
+  }
+
+  corpoHTML += `
+      <div class="campo full">
+        <div class="campo-label">Atendido por</div>
+        <div class="campo-valor">${a.atendente || '—'}</div>
+      </div>`;
+
+  document.getElementById('detalhe-corpo').innerHTML = corpoHTML;
+  document.getElementById('detalhe-whatsapp-btn').onclick = () => abrirWhatsApp(telWhats, montarMensagemConfirmacao(a));
+  document.getElementById('detalhe-chat-btn').onclick = () => {
+    fecharModalDetalhe();
+    abrirChat(a.id, a.telefone || '', a.nome && a.nome.trim() !== '' ? a.nome : 'Paciente não identificado', false);
+  };
+
+  document.getElementById('modalDetalhe').classList.add('visivel');
+}
+
+function fecharModalDetalhe() {
+  document.getElementById('modalDetalhe').classList.remove('visivel');
+}
+
+function mostrarToast(msg, tipo) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast visivel ' + (tipo || '');
+  setTimeout(() => { t.className = 'toast'; }, 3000);
+}
+
+/* ============================================================
+   MINI-CHAT
+   ============================================================ */
+
+let _chatId = null;
+let _chatTelefone = null;
+let _chatNome = null;
+let _chatIntervalo = null;
+let _enviandoMensagem = false;
+
+async function abrirChat(id, telefone, nome, precisaAssumirPrimeiro) {
+  const atendente = obterAtendenteIdentificada();
+  if (!atendente) {
+    abrirModalIdentificacao(false);
+    mostrarToast('Selecione seu nome antes de conversar', 'aviso');
+    return;
+  }
+
+  _chatId = id;
+  _chatTelefone = telefone;
+  _chatNome = nome;
+
+  document.getElementById('chatNome').textContent = nome;
+  document.getElementById('chatTelefoneTexto').textContent = telefone;
+
+  // Pré-preenche o campo com o template de confirmação (mesmo usado no botão WhatsApp),
+  // somente para cards de agendamento (novo/cancelamento/remarcacao) ainda não concluídos.
+  const agendamentoChat = todosAgendamentos.find(x => x.id === id);
+  const tipoChat = agendamentoChat ? (agendamentoChat.tipo_solicitacao || 'novo') : '';
+  if (agendamentoChat && tipoChat !== 'duvida_valor' && agendamentoChat.status !== 'concluido') {
+    document.getElementById('chatInput').value = montarMensagemConfirmacao(agendamentoChat);
+  } else {
+    document.getElementById('chatInput').value = '';
+  }
+  autoAjustarChatInput();
+  document.getElementById('chatCorpo').innerHTML = '<div class="chat-carregando">Carregando conversa...</div>';
+  document.getElementById('modalChat').classList.add('visivel');
+
+  if (precisaAssumirPrimeiro) {
+    const agendamento = todosAgendamentos.find(x => x.id === id);
+    if (agendamento && agendamento.status === 'pendente') {
+      await executarAssumir(id, atendente);
+    }
+  }
+
+  await carregarHistoricoChat();
+
+  if (_chatIntervalo) clearInterval(_chatIntervalo);
+  _chatIntervalo = setInterval(carregarHistoricoChat, 5000);
+}
+
+function fecharChat() {
+  document.getElementById('modalChat').classList.remove('visivel');
+  if (_chatIntervalo) { clearInterval(_chatIntervalo); _chatIntervalo = null; }
+  _chatId = null;
+  _chatTelefone = null;
+}
+
+async function carregarHistoricoChat() {
+  if (!_chatTelefone) return;
+  try {
+    const res = await fetch(WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ acao: 'historico', telefone: _chatTelefone, token: obterToken() })
+    });
+    const data = await res.json();
+    renderizarChat(data.mensagens || []);
+  } catch (e) {
+    document.getElementById('chatCorpo').innerHTML = '<div class="chat-carregando">Não foi possível carregar a conversa.</div>';
+  }
+}
+
+function renderizarChat(mensagens) {
+  const corpo = document.getElementById('chatCorpo');
+  const estavaNoFinal = corpo.scrollTop + corpo.clientHeight >= corpo.scrollHeight - 40;
+
+  if (mensagens.length === 0) {
+    corpo.innerHTML = '<div class="chat-vazio">Ainda não há mensagens nessa conversa.</div>';
+    return;
+  }
+
+  corpo.innerHTML = mensagens.map(m => {
+    const remetente = m.remetente === 'paciente' ? 'paciente' : (m.remetente === 'agente' ? 'agente' : 'atendente');
+    const hora = new Date(m.created_at).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+    return `<div class="bolha ${remetente}">${escaparHtml(m.conteudo || '')}<span class="bolha-hora">${hora}</span></div>`;
+  }).join('');
+
+  if (estavaNoFinal) {
+    corpo.scrollTop = corpo.scrollHeight;
+  }
+}
+
+function escaparHtml(texto) {
+  const div = document.createElement('div');
+  div.textContent = texto;
+  return div.innerHTML;
+}
+
+async function enviarMensagemChat() {
+  if (_enviandoMensagem) return;
+
+  const input = document.getElementById('chatInput');
+  const texto = input.value.trim();
+  if (!texto || !_chatTelefone) return;
+
+  _enviandoMensagem = true;
+  const atendente = obterAtendenteIdentificada();
+  const btnEnviar = document.getElementById('chatBtnEnviar');
+  btnEnviar.disabled = true;
+  input.value = '';
+  autoAjustarChatInput();
+
+  try {
+    const res = await fetch(WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ acao: 'enviar_mensagem', telefone: _chatTelefone, mensagem: texto, atendente, token: obterToken() })
+    });
+    const data = await res.json();
+    if (!data.success) {
+      mostrarToast('⚠️ Mensagem não enviada: ' + (data.mensagem || 'erro desconhecido'), 'erro');
+    }
+    await carregarHistoricoChat();
+  } catch (e) {
+    mostrarToast('Erro ao enviar mensagem. Tente novamente.', 'erro');
+    input.value = texto;
+    autoAjustarChatInput();
+  } finally {
+    _enviandoMensagem = false;
+    btnEnviar.disabled = false;
+    input.focus();
+  }
+}
+
+function chatInputTeclado(evento) {
+  if (evento.key === 'Enter' && !evento.shiftKey && !evento.repeat) {
+    evento.preventDefault();
+    enviarMensagemChat();
+  }
+}
+
+function autoAjustarChatInput() {
+  const input = document.getElementById('chatInput');
+  if (!input) return;
+  input.style.height = 'auto';
+  input.style.height = Math.min(input.scrollHeight, 180) + 'px';
+}
+
+async function encerrarChatAtual() {
+  if (!_chatId) return;
+  await concluir(_chatId);
+  fecharChat();
+}
+
+function abrirWhatsAppDoChat() {
+  if (!_chatTelefone) return;
+  const tel = (_chatTelefone || '').replace(/\D/g, '').replace(/^55/, '');
+  abrirWhatsApp('55' + tel, '');
+}
+
+// Carrega ao abrir e atualiza a cada 30 segundos
+window.addEventListener('DOMContentLoaded', function() {
+  verificarIdentificacao();
+  carregarAgendamentos();
+  setInterval(carregarAgendamentos, 30000);
+});
+</script>
+
+<!-- MODAL CÓDIGO DE ACESSO -->
+<div class="modal-overlay" id="modalToken">
+  <div class="modal">
+    <div class="modal-titulo">🔒 Código de acesso</div>
+    <p style="font-size:13px; color:var(--cinza-texto); margin-bottom:14px;">
+      Este painel é restrito à equipe da Cardiocenter. Digite o código de acesso para continuar.
+    </p>
+    <div id="tokenErro" style="display:none; background:var(--vermelho-claro); color:var(--vermelho-escuro); font-size:12px; padding:8px 12px; border-radius:8px; margin-bottom:12px;"></div>
+    <input type="password" id="tokenInput" placeholder="Código de acesso"
+      onkeydown="tokenInputTeclado(event)"
+      style="width:100%; padding:12px 14px; border:1.5px solid var(--cinza-borda); border-radius:10px; font-size:14px; font-family:inherit; margin-bottom:14px;">
+    <button class="btn btn-assumir" style="width:100%;" onclick="confirmarToken()">Entrar</button>
+  </div>
+</div>
+
+<!-- MODAL SELETOR DE ATENDENTE -->
+<div class="modal-overlay" id="modalAtendente">
+  <div class="modal">
+    <div class="modal-titulo" id="modalTitulo">Quem vai atender?</div>
+    <div class="modal-sub" id="modalSub">Selecione seu nome para assumir esta conversa</div>
+    <div class="atendentes-grid">
+      <button class="atendente-btn" onclick="selecionarAtendente('Amábile', this)">
+        <span class="modal-avatar">👩</span>Amábile
+      </button>
+      <button class="atendente-btn" onclick="selecionarAtendente('Sabrina', this)">
+        <span class="modal-avatar">👩</span>Sabrina
+      </button>
+      <button class="atendente-btn" onclick="selecionarAtendente('Laura', this)">
+        <span class="modal-avatar">👩</span>Laura
+      </button>
+      <button class="atendente-btn" onclick="selecionarAtendente('Julia', this)">
+        <span class="modal-avatar">👩</span>Julia
+      </button>
+    </div>
+    <div class="modal-acoes">
+      <button class="btn-cancelar" id="btnCancelarIdentificacao" onclick="fecharModal()" style="display:none;">Cancelar</button>
+      <button class="btn-confirmar-assumir" id="btnConfirmarAssumir" onclick="confirmarAssumir()" disabled>
+        Confirmar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DETALHE DE CONCLUÍDO (somente leitura) -->
+<div class="modal-overlay" id="modalDetalhe">
+  <div class="modal modal-detalhe">
+    <div class="modal-titulo" id="detalhe-nome">—</div>
+    <div class="modal-sub" id="detalhe-data">—</div>
+    <div class="modal-detalhe-corpo" id="detalhe-corpo">
+    </div>
+    <div class="modal-acoes">
+      <button class="btn-cancelar" onclick="fecharModalDetalhe()">Fechar</button>
+      <button class="btn-confirmar-assumir" id="detalhe-chat-btn" style="background: var(--vermelho);">
+        💬 Ver conversa
+      </button>
+      <button class="btn-confirmar-assumir" id="detalhe-whatsapp-btn" style="background: #25D366;">
+        💬 Abrir WhatsApp
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DE CHAT -->
+<div class="modal-overlay" id="modalChat">
+  <div class="modal modal-chat">
+    <div class="chat-header">
+      <div class="chat-header-info">
+        <div class="chat-nome" id="chatNome">—</div>
+        <div class="chat-telefone" id="chatTelefoneTexto">—</div>
+      </div>
+      <button class="chat-fechar" onclick="fecharChat()">✕</button>
+    </div>
+    <div class="chat-corpo" id="chatCorpo">
+      <div class="chat-carregando">Carregando conversa...</div>
+    </div>
+    <div class="chat-rodape">
+      <div class="chat-input-linha">
+        <textarea class="chat-input" id="chatInput" rows="1" placeholder="Digite sua mensagem..." onkeydown="chatInputTeclado(event)" oninput="autoAjustarChatInput()"></textarea>
+        <button class="chat-btn-enviar" id="chatBtnEnviar" onclick="enviarMensagemChat()">➤</button>
+      </div>
+      <div class="chat-acoes-rodape">
+        <button class="btn btn-whatsapp" style="flex:0 0 auto;" onclick="abrirWhatsAppDoChat()" title="Abrir WhatsApp para enviar/receber arquivos">📎 Arquivos</button>
+        <button class="btn btn-concluir" onclick="encerrarChatAtual()">✅ Encerrar atendimento</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
