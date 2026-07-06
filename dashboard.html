@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<!-- DASHBOARD-VERSAO: 2026-07-06-fix-decimais -->
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cardiocenter — Dashboard de Performance</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --vermelho: #C0392B;
+  --vermelho-escuro: #96281B;
+  --vermelho-suave: #FADBD8;
+  --preto: #F4F6F8;          /* fundo da página (tema claro) */
+  --cinza-escuro: #FFFFFF;   /* cards e header */
+  --cinza-medio: #EEF1F4;    /* inputs e caixas internas */
+  --cinza-borda: #E3E8ED;
+  --cinza-texto: #6B7A88;
+  --branco: #1C2833;         /* texto principal (escuro) */
+  --branco-suave: #F0F4F8;
+  --verde: #2ECC71;
+  --verde-suave: rgba(46,204,113,0.12);
+  --azul: #3498DB;
+  --azul-suave: rgba(52,152,219,0.12);
+  --amarelo: #F39C12;
+  --amarelo-suave: rgba(243,156,18,0.12);
+  --roxo: #9B59B6;
+  --roxo-suave: rgba(155,89,182,0.12);
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--preto);
+  color: var(--branco);
+  min-height: 100vh;
+}
+
+/* HEADER */
+header {
+  background: var(--cinza-escuro);
+  border-bottom: 1px solid var(--cinza-borda);
+  padding: 0 32px;
+  height: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-icone {
+  width: 38px;
+  height: 38px;
+  background: var(--vermelho);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.logo-nome { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+.logo-sub { font-size: 11px; color: var(--cinza-texto); margin-top: 1px; }
+
+/* FILTRO DE PERÍODO */
+.filtro-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 32px;
+  background: var(--cinza-escuro);
+  border-bottom: 1px solid var(--cinza-borda);
+}
+
+.filtro-label { font-size: 12px; color: var(--cinza-texto); font-weight: 500; }
+
+.filtro-grupo { display: flex; gap: 6px; }
+
+.filtro-btn {
+  padding: 7px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--cinza-borda);
+  background: transparent;
+  color: var(--cinza-texto);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: 'Inter', sans-serif;
+}
+
+.filtro-btn:hover { border-color: var(--vermelho); color: var(--branco); }
+.filtro-btn.ativo { background: var(--vermelho); border-color: var(--vermelho); color: white; }
+
+.filtro-datas {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.filtro-datas input {
+  background: var(--cinza-medio);
+  border: 1px solid var(--cinza-borda);
+  border-radius: 8px;
+  color: var(--branco);
+  padding: 7px 12px;
+  font-size: 12px;
+  font-family: 'Inter', sans-serif;
+  outline: none;
+}
+
+.filtro-datas input:focus { border-color: var(--vermelho); }
+
+.btn-buscar {
+  background: var(--vermelho);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  padding: 8px 18px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  transition: background 0.15s;
+}
+
+.btn-buscar:hover { background: var(--vermelho-escuro); }
+
+/* CONTEÚDO */
+.conteudo { padding: 24px 32px 48px; }
+
+/* TÍTULO DA SEÇÃO */
+.secao-titulo {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--cinza-texto);
+  margin-bottom: 14px;
+  margin-top: 28px;
+}
+
+/* KPI CARDS — LINHA PRINCIPAL */
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+  margin-bottom: 4px;
+}
+
+.kpi {
+  background: var(--cinza-escuro);
+  border: 1px solid var(--cinza-borda);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  border-radius: 14px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.kpi::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+
+.kpi.verde::before { background: var(--verde); }
+.kpi.azul::before { background: var(--azul); }
+.kpi.amarelo::before { background: var(--amarelo); }
+.kpi.roxo::before { background: var(--roxo); }
+.kpi.vermelho::before { background: var(--vermelho); }
+
+.kpi-icone {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  margin-bottom: 14px;
+}
+
+.kpi.verde .kpi-icone { background: var(--verde-suave); }
+.kpi.azul .kpi-icone { background: var(--azul-suave); }
+.kpi.amarelo .kpi-icone { background: var(--amarelo-suave); }
+.kpi.roxo .kpi-icone { background: var(--roxo-suave); }
+.kpi.vermelho .kpi-icone { background: rgba(192,57,43,0.15); }
+
+.kpi-valor {
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -1px;
+}
+
+.kpi-label {
+  font-size: 12px;
+  color: var(--cinza-texto);
+  margin-top: 6px;
+  font-weight: 500;
+}
+
+.kpi-detalhe {
+  font-size: 11px;
+  color: var(--cinza-texto);
+  margin-top: 4px;
+}
+
+/* LINHA DE GRÁFICOS */
+.graficos-linha {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.grafico-card {
+  background: var(--cinza-escuro);
+  border: 1px solid var(--cinza-borda);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  border-radius: 14px;
+  padding: 20px;
+}
+
+.grafico-titulo {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.grafico-sub {
+  font-size: 11px;
+  color: var(--cinza-texto);
+  margin-bottom: 18px;
+}
+
+.grafico-container { position: relative; height: 220px; }
+
+/* RANKING INLINE */
+.ranking-lista { display: flex; flex-direction: column; gap: 10px; }
+
+.ranking-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ranking-pos {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--cinza-texto);
+  width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.ranking-pos.top { color: var(--amarelo); }
+
+.ranking-nome {
+  font-size: 13px;
+  font-weight: 500;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ranking-barra-wrap {
+  flex: 2;
+  background: var(--cinza-medio);
+  border-radius: 4px;
+  height: 6px;
+  overflow: hidden;
+}
+
+.ranking-barra {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--vermelho);
+  transition: width 0.6s ease;
+}
+
+.ranking-total {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--branco);
+  width: 28px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.ranking-pct {
+  font-size: 11px;
+  color: var(--cinza-texto);
+  width: 36px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* SLA CARDS */
+.sla-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.sla-item {
+  background: var(--cinza-medio);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+
+.sla-valor { font-size: 24px; font-weight: 700; }
+.sla-label { font-size: 11px; color: var(--cinza-texto); margin-top: 4px; }
+
+/* ESTADO VAZIO */
+.estado-vazio {
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--cinza-texto);
+}
+
+.estado-vazio .icone { font-size: 48px; margin-bottom: 16px; }
+.estado-vazio .titulo { font-size: 16px; font-weight: 600; color: var(--branco); }
+.estado-vazio .sub { font-size: 13px; margin-top: 6px; }
+
+/* CARREGANDO */
+.carregando-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(244,246,248,0.8);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.carregando-overlay.visivel { display: flex; }
+.spinner {
+  width: 40px; height: 40px;
+  border: 3px solid var(--cinza-borda);
+  border-top-color: var(--vermelho);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.carregando-texto { font-size: 13px; color: var(--cinza-texto); }
+
+/* PERÍODO EXIBIDO */
+.periodo-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(192,57,43,0.15);
+  border: 1px solid rgba(192,57,43,0.3);
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 11px;
+  color: #E74C3C;
+  font-weight: 500;
+  margin-left: 12px;
+}
+</style>
+</head>
+<body>
+
+<div class="carregando-overlay" id="overlay">
+  <div class="spinner"></div>
+  <div class="carregando-texto">Calculando indicadores...</div>
+</div>
+
+<header>
+  <div class="logo">
+    <div class="logo-icone">❤</div>
+    <div>
+      <div class="logo-nome">Cardiocenter <span style="font-weight:400;color:var(--cinza-texto)">/ Dashboard</span></div>
+      <div class="logo-sub">Performance do Agente de Atendimento</div>
+    </div>
+  </div>
+  <div id="periodo-tag"></div>
+</header>
+
+<div class="filtro-bar">
+  <span class="filtro-label">Período rápido:</span>
+  <div class="filtro-grupo">
+    <button class="filtro-btn" onclick="periodoRapido('hoje', this)">Hoje</button>
+    <button class="filtro-btn" onclick="periodoRapido('semana', this)">Esta semana</button>
+    <button class="filtro-btn ativo" onclick="periodoRapido('mes', this)">Este mês</button>
+    <button class="filtro-btn" onclick="periodoRapido('trimestre', this)">Trimestre</button>
+  </div>
+  <div class="filtro-datas">
+    <span class="filtro-label">Ou escolha:</span>
+    <input type="date" id="data-inicio">
+    <span class="filtro-label">até</span>
+    <input type="date" id="data-fim">
+    <button class="btn-buscar" onclick="buscarPersonalizado()">Aplicar</button>
+  </div>
+</div>
+
+<div class="conteudo" id="conteudo">
+  <div class="estado-vazio">
+    <div class="icone">📊</div>
+    <div class="titulo">Selecione um período para carregar os dados</div>
+    <div class="sub">Use os filtros acima para visualizar as estatísticas</div>
+  </div>
+</div>
+
+<script>
+const WEBHOOK_URL = 'https://coldbloodedchameleon-n8n.cloudfy.live/webhook/dashboard-cardiocenter';
+
+/* Código de acesso — mesma chave do painel: token já digitado nas máquinas vale aqui */
+const CHAVE_TOKEN = 'cardiocenter_token_acesso';
+let _ultimaBusca = null;
+function obterToken() { return localStorage.getItem(CHAVE_TOKEN) || ''; }
+function mostrarTelaToken(msgErro) {
+  const modal = document.getElementById('modalToken');
+  const erroEl = document.getElementById('tokenErro');
+  erroEl.textContent = msgErro || '';
+  erroEl.style.display = msgErro ? 'block' : 'none';
+  document.getElementById('tokenInput').value = '';
+  modal.classList.add('visivel');
+  setTimeout(() => document.getElementById('tokenInput').focus(), 100);
+}
+function confirmarToken() {
+  const v = document.getElementById('tokenInput').value.trim();
+  if (!v) return;
+  localStorage.setItem(CHAVE_TOKEN, v);
+  document.getElementById('modalToken').classList.remove('visivel');
+  if (_ultimaBusca) buscar(_ultimaBusca[0], _ultimaBusca[1]);
+}
+function tokenInputTeclado(ev) { if (ev.key === 'Enter') { ev.preventDefault(); confirmarToken(); } }
+
+let chartHorarios = null;
+let chartServicos = null;
+
+function formatarData(d) {
+  return d.toISOString().slice(0,10);
+}
+
+function periodoRapido(tipo, btn) {
+  document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('ativo'));
+  btn.classList.add('ativo');
+
+  const hoje = new Date();
+  let inicio, fim = new Date(hoje);
+  fim.setHours(23,59,59);
+
+  if (tipo === 'hoje') {
+    inicio = new Date(hoje); inicio.setHours(0,0,0);
+  } else if (tipo === 'semana') {
+    inicio = new Date(hoje);
+    inicio.setDate(hoje.getDate() - hoje.getDay());
+    inicio.setHours(0,0,0);
+  } else if (tipo === 'mes') {
+    inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+    inicio.setHours(0,0,0);
+  } else if (tipo === 'trimestre') {
+    inicio = new Date(hoje);
+    inicio.setMonth(hoje.getMonth() - 3);
+    inicio.setHours(0,0,0);
+  }
+
+  document.getElementById('data-inicio').value = formatarData(inicio);
+  document.getElementById('data-fim').value = formatarData(fim);
+  buscar(formatarData(inicio), formatarData(fim) + ' 23:59:59');
+}
+
+function buscarPersonalizado() {
+  document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('ativo'));
+  const ini = document.getElementById('data-inicio').value;
+  const fim = document.getElementById('data-fim').value;
+  if (!ini || !fim) { alert('Selecione as duas datas.'); return; }
+  buscar(ini, fim + ' 23:59:59');
+}
+
+async function buscar(inicio, fim) {
+  _ultimaBusca = [inicio, fim];
+  if (!obterToken()) { mostrarTelaToken(); return; }
+  document.getElementById('overlay').classList.add('visivel');
+  try {
+    const res = await fetch(WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data_inicio: inicio + ' 00:00:00', data_fim: fim, token: obterToken() })
+    });
+    const data = await res.json();
+    if (data && data.erro === 'nao_autorizado') {
+      localStorage.removeItem(CHAVE_TOKEN);
+      document.getElementById('overlay').classList.remove('visivel');
+      mostrarTelaToken('Código incorreto ou expirado. Digite novamente.');
+      return;
+    }
+    renderizar(data, inicio, fim);
+  } catch(e) {
+    document.getElementById('conteudo').innerHTML = `
+      <div class="estado-vazio">
+        <div class="icone">⚠️</div>
+        <div class="titulo">Erro ao carregar dados</div>
+        <div class="sub">Verifique se o workflow WEBHOOK DASHBOARD está ativo no N8N</div>
+      </div>`;
+  }
+  document.getElementById('overlay').classList.remove('visivel');
+}
+
+function formatarMinutos(min) {
+  min = parseFloat(min);
+  if (!min || isNaN(min) || min <= 0) return '—';
+  if (min < 1) return '<1min';
+  min = Math.round(min);
+  if (min < 60) return min + 'min';
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return m > 0 ? `${h}h ${m}min` : `${h}h`;
+}
+
+function renderizar(d, inicio, fim) {
+  const r = d.resumo || {};
+  const sla = d.sla || {};
+  const convenios = d.convenios || [];
+  const horarios = d.horarios_pico || [];
+  const servicos = d.servicos || [];
+
+  // Atualiza tag de período
+  const ini = new Date(inicio + 'T00:00:00').toLocaleDateString('pt-BR');
+  const fimD = new Date(fim.slice(0,10) + 'T00:00:00').toLocaleDateString('pt-BR');
+  document.getElementById('periodo-tag').innerHTML =
+    `<span class="periodo-tag">📅 ${ini} → ${fimD}</span>`;
+
+  // Tempo trabalhado
+  const tempoStr = r.tempo_agente_horas > 0
+    ? `${r.tempo_agente_horas}h ${r.tempo_agente_minutos}min`
+    : `${r.tempo_agente_minutos || 0}min`;
+
+  const html = `
+    <div class="secao-titulo">Visão Geral do Período</div>
+    <div class="kpis">
+      <div class="kpi verde">
+        <div class="kpi-icone">🤖</div>
+        <div class="kpi-valor">${r.total_agendamentos || 0}</div>
+        <div class="kpi-label">Atendimentos realizados</div>
+        <div class="kpi-detalhe">pelo agente no período</div>
+      </div>
+      <div class="kpi azul">
+        <div class="kpi-icone">💬</div>
+        <div class="kpi-valor">${r.perguntas_respondidas || 0}</div>
+        <div class="kpi-label">Perguntas respondidas</div>
+        <div class="kpi-detalhe">sem intervenção humana</div>
+      </div>
+      <div class="kpi amarelo">
+        <div class="kpi-icone">⏱️</div>
+        <div class="kpi-valor">${tempoStr}</div>
+        <div class="kpi-label">Tempo trabalhado</div>
+        <div class="kpi-detalhe">estimativa do agente</div>
+      </div>
+      <div class="kpi roxo">
+        <div class="kpi-icone">✅</div>
+        <div class="kpi-valor">${r.total_concluidos || 0}</div>
+        <div class="kpi-label">Agendamentos concluídos</div>
+        <div class="kpi-detalhe">${r.em_atendimento || 0} em atendimento agora</div>
+      </div>
+      <div class="kpi vermelho">
+        <div class="kpi-icone">⏳</div>
+        <div class="kpi-valor">${r.pendentes || 0}</div>
+        <div class="kpi-label">Aguardando atendimento</div>
+        <div class="kpi-detalhe">na fila atual</div>
+      </div>
+    </div>
+
+    <div class="secao-titulo">SLA de Atendimento — Tempo até a recepção assumir</div>
+    <div class="grafico-card" style="margin-bottom:14px">
+      <div class="sla-grid">
+        <div class="sla-item">
+          <div class="sla-valor" style="color:var(--verde)">${formatarMinutos(sla.minimo_minutos)}</div>
+          <div class="sla-label">Mais rápido</div>
+        </div>
+        <div class="sla-item">
+          <div class="sla-valor" style="color:var(--amarelo)">${formatarMinutos(sla.medio_minutos)}</div>
+          <div class="sla-label">Tempo médio</div>
+        </div>
+        <div class="sla-item">
+          <div class="sla-valor" style="color:var(--vermelho)">${formatarMinutos(sla.maximo_minutos)}</div>
+          <div class="sla-label">Mais lento</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="secao-titulo">Distribuição e Horários</div>
+    <div class="graficos-linha">
+      <div class="grafico-card">
+        <div class="grafico-titulo">Horários de Pico</div>
+        <div class="grafico-sub">Concentração de mensagens por hora do dia</div>
+        <div class="grafico-container">
+          <canvas id="chartHorarios"></canvas>
+        </div>
+      </div>
+      <div class="grafico-card">
+        <div class="grafico-titulo">Serviços Mais Solicitados</div>
+        <div class="grafico-sub">Distribuição por tipo de exame ou consulta</div>
+        <div class="grafico-container">
+          <canvas id="chartServicos"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="secao-titulo">Ranking de Convênios</div>
+    <div class="grafico-card">
+      <div class="grafico-titulo">Convênios mais frequentes no período</div>
+      <div class="grafico-sub">Baseado nos pré-agendamentos recebidos</div>
+      <div class="ranking-lista" id="rankingConvenios"></div>
+    </div>
+  `;
+
+  document.getElementById('conteudo').innerHTML = html;
+
+  // Gráfico horários
+  const horasLabels = Array.from({length:24}, (_,i) => i + 'h');
+  const horasDados = Array(24).fill(0);
+  horarios.forEach(h => { horasDados[parseInt(h.hora)] = parseInt(h.total); });
+
+  if (chartHorarios) chartHorarios.destroy();
+  chartHorarios = new Chart(document.getElementById('chartHorarios'), {
+    type: 'bar',
+    data: {
+      labels: horasLabels,
+      datasets: [{
+        data: horasDados,
+        backgroundColor: horasDados.map(v => v === Math.max(...horasDados) ? '#C0392B' : 'rgba(192,57,43,0.35)'),
+        borderRadius: 4,
+        borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#5D6D7A', font: {size:10} }, grid: { color: 'rgba(0,0,0,0.07)' } },
+        y: { ticks: { color: '#5D6D7A', font: {size:10} }, grid: { color: 'rgba(0,0,0,0.07)' }, beginAtZero: true }
+      }
+    }
+  });
+
+  // Gráfico serviços
+  if (chartServicos) chartServicos.destroy();
+  const cores = ['#C0392B','#E74C3C','#3498DB','#2ECC71','#F39C12','#9B59B6','#1ABC9C'];
+  chartServicos = new Chart(document.getElementById('chartServicos'), {
+    type: 'doughnut',
+    data: {
+      labels: servicos.map(s => s.servico),
+      datasets: [{
+        data: servicos.map(s => s.total),
+        backgroundColor: cores,
+        borderWidth: 0,
+        hoverOffset: 6
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: { color: '#5D6D7A', font: {size:11}, boxWidth: 12, padding: 14 }
+        }
+      }
+    }
+  });
+
+  // Ranking convênios
+  const maxConvenio = convenios.length > 0 ? convenios[0].total : 1;
+  const rankingEl = document.getElementById('rankingConvenios');
+  if (convenios.length === 0) {
+    rankingEl.innerHTML = '<div style="color:var(--cinza-texto);font-size:13px;padding:20px 0;text-align:center">Nenhum dado no período</div>';
+  } else {
+    rankingEl.innerHTML = convenios.map((c, i) => `
+      <div class="ranking-item">
+        <div class="ranking-pos ${i < 3 ? 'top' : ''}">${i+1}</div>
+        <div class="ranking-nome">${c.convenio}</div>
+        <div class="ranking-barra-wrap">
+          <div class="ranking-barra" style="width:${(c.total/maxConvenio*100).toFixed(0)}%"></div>
+        </div>
+        <div class="ranking-total">${c.total}</div>
+        <div class="ranking-pct">${c.percentual}%</div>
+      </div>`).join('');
+  }
+}
+
+// Carrega "este mês" por padrão ao abrir
+window.addEventListener('load', () => {
+  const hoje = new Date();
+  const ini = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+  document.getElementById('data-inicio').value = formatarData(ini);
+  document.getElementById('data-fim').value = formatarData(hoje);
+  buscar(formatarData(ini), formatarData(hoje) + ' 23:59:59');
+});
+</script>
+
+<style>
+.modal-token-overlay { display:none; position:fixed; inset:0; background:rgba(28,40,51,0.45); z-index:300; align-items:center; justify-content:center; }
+.modal-token-overlay.visivel { display:flex; }
+.modal-token { background:#fff; border-radius:16px; padding:26px; width:360px; max-width:90vw; box-shadow:0 10px 40px rgba(0,0,0,0.18); font-family:'Inter',sans-serif; }
+.modal-token h3 { font-size:15px; color:var(--branco); margin-bottom:8px; }
+.modal-token p { font-size:12.5px; color:var(--cinza-texto); margin-bottom:14px; }
+.modal-token .erro { display:none; background:#FADBD8; color:#922B21; font-size:12px; padding:8px 12px; border-radius:8px; margin-bottom:12px; }
+.modal-token input { width:100%; padding:11px 13px; border:1.5px solid var(--cinza-borda); border-radius:10px; font-size:14px; font-family:inherit; margin-bottom:12px; outline:none; }
+.modal-token input:focus { border-color:var(--vermelho); }
+.modal-token button { width:100%; background:var(--vermelho); color:#fff; border:none; border-radius:10px; padding:11px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit; }
+.modal-token button:hover { background:var(--vermelho-escuro); }
+</style>
+<div class="modal-token-overlay" id="modalToken">
+  <div class="modal-token">
+    <h3>🔒 Código de acesso</h3>
+    <p>Este dashboard é restrito à administração da Cardiocenter. Digite o código de acesso para continuar.</p>
+    <div class="erro" id="tokenErro"></div>
+    <input type="password" id="tokenInput" placeholder="Código de acesso" onkeydown="tokenInputTeclado(event)">
+    <button onclick="confirmarToken()">Entrar</button>
+  </div>
+</div>
+</body>
+</html>
