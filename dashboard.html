@@ -819,6 +819,13 @@ window.addEventListener('load', () => {
   document.getElementById('data-fim').value = formatarData(hoje);
   buscar(formatarData(ini), formatarData(hoje) + ' 23:59:59');
 });
+  // Auto-refresh: re-busca os dados do período atual a cada 60 segundos,
+// sem recarregar a página. Não mexe nos filtros escolhidos pelo usuário.
+setInterval(() => {
+  if (_ultimaBusca) {
+    buscar(_ultimaBusca[0], _ultimaBusca[1]);
+  }
+}, 60000);
 </script>
 
 <style>
