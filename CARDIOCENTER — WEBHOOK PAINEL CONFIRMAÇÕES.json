@@ -1,0 +1,219 @@
+{
+  "name": "CARDIOCENTER — WEBHOOK PAINEL CONFIRMAÇÕES",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "painel-confirmacoes-cardiocenter",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -480,
+        80
+      ],
+      "id": "e8525ca6-a40a-4eb2-8055-f9f6dd674731",
+      "name": "Recebe Requisicao Painel",
+      "webhookId": "painel-confirmacoes-cardiocenter"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "token-check-001",
+              "leftValue": "={{ $json.body.token }}",
+              "rightValue": "2af665d22d097e069c31d8fba6bab93a93c8edcf770a4d088b43e22b6cbcda0b",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -240,
+        80
+      ],
+      "id": "76dc0cae-60d8-4707-af5d-594c6fbd630f",
+      "name": "Token Valido?"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT chave, telefone, nome, data, resumo, status, tentativas, erro_msg, criado_em, enviado_em FROM fila_confirmacoes WHERE criado_em >= NOW() - INTERVAL '7 days' ORDER BY criado_em DESC",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        0
+      ],
+      "id": "31f69553-7c11-43fb-8b98-bbe6c6773fe3",
+      "name": "Busca Confirmacoes (7 dias)",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "tWbpNbv3AoQdJvyh",
+          "name": "postgres_cloudfy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(i => i.json);\nreturn [{ json: { confirmacoes: rows } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ],
+      "id": "12d4fb2f-dc6b-4cae-8d5b-b6b6d401d8b6",
+      "name": "Monta Resposta Lista"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        480,
+        0
+      ],
+      "id": "7590f059-2ab1-4549-8307-fa5073617ea4",
+      "name": "Responde Lista"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"erro\": \"nao_autorizado\" } }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        208
+      ],
+      "id": "d51369bd-e4f3-4d64-8673-b299b2a6d77d",
+      "name": "Responde Nao Autorizado"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Recebe Requisicao Painel": {
+      "main": [
+        [
+          {
+            "node": "Token Valido?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Token Valido?": {
+      "main": [
+        [
+          {
+            "node": "Busca Confirmacoes (7 dias)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responde Nao Autorizado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Busca Confirmacoes (7 dias)": {
+      "main": [
+        [
+          {
+            "node": "Monta Resposta Lista",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Monta Resposta Lista": {
+      "main": [
+        [
+          {
+            "node": "Responde Lista",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "a15c14ec-c12a-48a5-a4a6-66fd999eeaae",
+  "meta": {
+    "instanceId": "c927f4e855bfcf88573f9d48f065cc7b77841623bebcc9a1c0bd1c332f93c661"
+  },
+  "id": "tQcTGM7LUwSGOzvj",
+  "tags": []
+}
