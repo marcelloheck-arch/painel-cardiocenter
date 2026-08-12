@@ -1,0 +1,365 @@
+{
+  "name": "CARDIOCENTER — 2 ENVIO PROGRAMADO CONFIRMAÇÕES",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "30 9 * * 1-5"
+            },
+            {
+              "field": "cronExpression",
+              "expression": "0 16 * * 1-5"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1200,
+        464
+      ],
+      "id": "2371d85f-370b-4fd3-8005-074992a2f7c8",
+      "name": "Horario de Envio (9:30 e 16h, seg-sex)"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM fila_confirmacoes WHERE status = 'pendente' ORDER BY criado_em ASC",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -976,
+        464
+      ],
+      "id": "1e790d0a-4b2e-4b99-8e83-db506cf0e56f",
+      "name": "Busca Fila Pendente",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "tWbpNbv3AoQdJvyh",
+          "name": "postgres_cloudfy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Calcula o tempo de espera APOS cada envio:\n// - 60s entre mensagens dentro do mesmo bloco\n// - 15min (900s) ao fechar um bloco de 10\n// - 0s se for a ultima mensagem da fila (nao precisa esperar mais nada)\nconst items = $input.all();\nconst total = items.length;\n\nreturn items.map((item, idx) => {\n  let espera;\n  if (idx === total - 1) {\n    espera = 0;\n  } else {\n    const fechaBloco = (idx + 1) % 10 === 0;\n    espera = fechaBloco ? 900 : 60;\n  }\n  return { json: { ...item.json, esperaAposEnvio: espera, posicaoFila: idx + 1, totalFila: total, bloco: Math.ceil((idx + 1) / 10) } };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -752,
+        464
+      ],
+      "id": "11c20c8d-b8ce-4b18-af14-a2166dc58dd4",
+      "name": "Calcula Blocos e Espera"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -528,
+        464
+      ],
+      "id": "e02723d7-5e2b-48c2-bbcc-4baa4c1872b7",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "resource": "messages-api",
+        "instanceName": "PRIMEIRO-TESTE",
+        "remoteJid": "={{ $json.telefone }}",
+        "messageText": "={{ $json.mensagem }}",
+        "options_message": {}
+      },
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        -304,
+        288
+      ],
+      "id": "b444e7ad-441e-40df-bdeb-9ee1b81ffa2d",
+      "name": "Envia Confirmacao WhatsApp",
+      "retryOnFail": true,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "evolutionApi": {
+          "id": "AlFSFUeZBiuwDfZ9",
+          "name": "evolution_primeiro_teste"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE fila_confirmacoes SET status = 'enviado', enviado_em = NOW() WHERE chave = '{{ $('Loop Over Items').item.json.chave }}'",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -80,
+        288
+      ],
+      "id": "8ffbc6cc-f2d8-4352-8d95-f0034bfd7587",
+      "name": "Atualiza Status: Enviado",
+      "credentials": {
+        "postgres": {
+          "id": "tWbpNbv3AoQdJvyh",
+          "name": "postgres_cloudfy"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE fila_confirmacoes SET status = 'erro', tentativas = tentativas + 1, erro_msg = '{{ ($json.error && $json.error.message) ? $json.error.message.replace(/'/g, \"''\").slice(0,500) : \"falha no envio\" }}' WHERE chave = '{{ $('Loop Over Items').item.json.chave }}'",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -80,
+        480
+      ],
+      "id": "4da349f4-77c7-408f-b505-65ca10ced093",
+      "name": "Atualiza Status: Erro",
+      "credentials": {
+        "postgres": {
+          "id": "tWbpNbv3AoQdJvyh",
+          "name": "postgres_cloudfy"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "amount": "={{ $('Loop Over Items').item.json.esperaAposEnvio }}"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        144,
+        480
+      ],
+      "id": "5fb823a9-15a8-48cd-857c-d66738a4c503",
+      "name": "Espera (60s ou 15min)",
+      "webhookId": "cardiocenter-envio-espera"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO estado_conversa (session_key, fluxo, etapa_atual, dados_confirmacao_pendente, updated_at)\nVALUES (\n  '{{ $json.sessionKey }}',\n  'confirmacao_agenda',\n  'aguardando_confirmacao_ou_remarcacao',\n  '{{ $json.dadosConfirmacaoPendente.replace(/'/g, \"''\") }}',\n  NOW()\n)\nON CONFLICT (session_key) DO UPDATE SET\n  fluxo = EXCLUDED.fluxo,\n  etapa_atual = EXCLUDED.etapa_atual,\n  dados_confirmacao_pendente = EXCLUDED.dados_confirmacao_pendente,\n  updated_at = NOW();",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        144,
+        96
+      ],
+      "id": "e6e81634-3be6-457a-ba3c-381bfc1623dc",
+      "name": "Marca Estado Aguardando Resposta",
+      "credentials": {
+        "postgres": {
+          "id": "tWbpNbv3AoQdJvyh",
+          "name": "postgres_cloudfy"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT session_key, fluxo, etapa_atual, dados_confirmacao_pendente, updated_at\nFROM estado_conversa\nWHERE session_key LIKE '554898872%'\nORDER BY updated_at DESC;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -1200,
+        -128
+      ],
+      "id": "574d4091-e402-4397-ae86-9c9a272b71ef",
+      "name": "Execute a SQL query",
+      "credentials": {
+        "postgres": {
+          "id": "tWbpNbv3AoQdJvyh",
+          "name": "postgres_cloudfy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const telefone = $('Loop Over Items').item.json.telefone || '';\nconst dataHoje = $now.toFormat('yyyyMMdd');\nconst dados = JSON.stringify({\n  nome: $('Loop Over Items').item.json.nome,\n  data: $('Loop Over Items').item.json.data,\n  resumo: $('Loop Over Items').item.json.resumo,\n  telefone: telefone\n});\n\nconst m = telefone.match(/^55(\\d{2})9(\\d{8})$/);\nconst telefoneSem9 = m ? `55${m[1]}${m[2]}` : null;\n\nconst chaves = [telefone];\nif (telefoneSem9 && telefoneSem9 !== telefone) chaves.push(telefoneSem9);\n\nreturn chaves.map(tel => ({\n  json: {\n    sessionKey: `${tel}_${dataHoje}`,\n    dadosConfirmacaoPendente: dados\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -80,
+        96
+      ],
+      "id": "42cf7d94-cfb3-48d3-b086-f5a0364e8a88",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT session_key, fluxo, etapa_atual, dados_confirmacao_pendente, updated_at\nFROM estado_conversa\nWHERE session_key LIKE '5548%720983%' OR session_key LIKE '554888720983%'\nORDER BY updated_at DESC;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -864,
+        704
+      ],
+      "id": "d1cc68f5-cae5-410f-831f-6ecfd315f93a",
+      "name": "Execute a SQL query1",
+      "credentials": {
+        "postgres": {
+          "id": "tWbpNbv3AoQdJvyh",
+          "name": "postgres_cloudfy"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Horario de Envio (9:30 e 16h, seg-sex)": {
+      "main": [
+        [
+          {
+            "node": "Busca Fila Pendente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Busca Fila Pendente": {
+      "main": [
+        [
+          {
+            "node": "Calcula Blocos e Espera",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calcula Blocos e Espera": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Envia Confirmacao WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Envia Confirmacao WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Atualiza Status: Enviado",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Atualiza Status: Erro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualiza Status: Enviado": {
+      "main": [
+        [
+          {
+            "node": "Espera (60s ou 15min)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualiza Status: Erro": {
+      "main": [
+        [
+          {
+            "node": "Espera (60s ou 15min)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Espera (60s ou 15min)": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Marca Estado Aguardando Resposta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "81329619-d967-4200-ba93-ae6645e8070a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c927f4e855bfcf88573f9d48f065cc7b77841623bebcc9a1c0bd1c332f93c661"
+  },
+  "id": "srjMkz6uNNgr33ES",
+  "tags": []
+}
