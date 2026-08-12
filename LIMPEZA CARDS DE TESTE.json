@@ -1,0 +1,95 @@
+{
+  "name": "LIMPEZA CARDS DE TESTE",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -368,
+        -224
+      ],
+      "id": "f30dac49-cdd4-44f7-bfc0-696ed417108e",
+      "name": "Executar manualmente"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, nome, servico, status, telefone, created_at\nFROM agendamentos\nWHERE telefone LIKE '%99314665'\nORDER BY created_at DESC;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        -176,
+        -192
+      ],
+      "id": "06e17fb3-4ca4-4a76-b56b-b77f75e0906c",
+      "name": "PASSO 1 - CONFERIR (SELECT)",
+      "credentials": {
+        "postgres": {
+          "id": "tWbpNbv3AoQdJvyh",
+          "name": "postgres_cloudfy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- PASSO 2: só rode este DEPOIS de conferir o resultado do PASSO 1.\n-- Apaga somente os cards do telefone de teste 554888720983.\nDELETE FROM agendamentos\nWHERE telefone LIKE '%99314665%';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        16,
+        -80
+      ],
+      "id": "95e8e462-1ab7-40af-8792-d9add94d10d4",
+      "name": "PASSO 2 - APAGAR (DELETE) - executar so este node",
+      "credentials": {
+        "postgres": {
+          "id": "tWbpNbv3AoQdJvyh",
+          "name": "postgres_cloudfy"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Executar manualmente": {
+      "main": [
+        [
+          {
+            "node": "PASSO 1 - CONFERIR (SELECT)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PASSO 1 - CONFERIR (SELECT)": {
+      "main": [
+        [
+          {
+            "node": "PASSO 2 - APAGAR (DELETE) - executar so este node",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "0421517c-854c-48c9-9b0e-90aa226cc3fa",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c927f4e855bfcf88573f9d48f065cc7b77841623bebcc9a1c0bd1c332f93c661"
+  },
+  "id": "XSrXhpt8YL5yPPcd",
+  "tags": []
+}
