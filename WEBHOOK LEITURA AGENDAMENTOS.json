@@ -1,0 +1,1039 @@
+{
+  "name": "WEBHOOK LEITURA AGENDAMENTOS",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "# WEBHOOK LEITURA AGENDAMENTOS\nO painel HTML chama este webhook para buscar\nos pré-agendamentos da tabela agendamentos.\nTambém atualiza o status (assumir/concluir).",
+        "height": 188,
+        "width": 560,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -336,
+        -320
+      ],
+      "typeVersion": 1,
+      "id": "d9c015b6-f0f2-423a-83f2-5a646aae6d14",
+      "name": "Cabecalho Leitura"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "painel-agendamentos",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -752,
+        256
+      ],
+      "id": "d112fc7b-9e2c-4eb9-9771-01d3406d253b",
+      "name": "Recebe requisicao painel",
+      "webhookId": "painel-agendamentos-cardiocenter"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "acao-001",
+              "name": "acao",
+              "value": "={{ $json.body.acao }}",
+              "type": "string"
+            },
+            {
+              "id": "id-001",
+              "name": "id",
+              "value": "={{ $json.body.id }}",
+              "type": "number"
+            },
+            {
+              "id": "atendente-001",
+              "name": "atendente",
+              "value": "={{ $json.body.atendente }}",
+              "type": "string"
+            },
+            {
+              "id": "f11bf85d-9f05-47d8-85d1-3be9f0c48087",
+              "name": "telefone",
+              "value": "={{ $json.body.telefone }}",
+              "type": "string"
+            },
+            {
+              "id": "f4f06dc7-fb82-4ee9-ab43-dc0d5bb3d3dd",
+              "name": "mensagem",
+              "value": "={{ $json.body.mensagem }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -304,
+        160
+      ],
+      "id": "69cc29b1-4fc7-40f3-a388-f2137d4ae600",
+      "name": "Coleta acao"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "acao-listar",
+                    "leftValue": "={{ $json.acao }}",
+                    "rightValue": "listar",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "listar"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "acao-assumir",
+                    "leftValue": "={{ $json.acao }}",
+                    "rightValue": "assumir",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "assumir"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "acao-concluir",
+                    "leftValue": "={{ $json.acao }}",
+                    "rightValue": "concluir",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "concluir"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "c1344b10-d661-41e9-bb4d-65ce70022fdf",
+                    "leftValue": "={{ $json.acao }}",
+                    "rightValue": "enviar_mensagem",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "enviar_mensagem"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "7199975c-055b-4e1d-ab5c-60373ee24f63",
+                    "leftValue": "={{ $json.acao }}",
+                    "rightValue": "historico",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "historico"
+            }
+          ]
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -80,
+        112
+      ],
+      "id": "fe66bf80-1666-40ad-86ca-297be029c6f6",
+      "name": "Qual acao?"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM agendamentos WHERE telefone NOT LIKE '%88720983' ORDER BY created_at DESC",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        144,
+        -224
+      ],
+      "id": "35f1af80-6ac7-4cff-8704-c5dcfe16a390",
+      "name": "BUSCA AGENDAMENTOS",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "tWbpNbv3AoQdJvyh",
+          "name": "postgres_cloudfy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE agendamentos \nSET status = 'em_atendimento', \n    atendente = '{{ $('Coleta acao').item.json.atendente }}',\n    updated_at = NOW() \nWHERE id = {{ $('Coleta acao').item.json.id }} \nAND status = 'pendente' \nRETURNING id, status",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        144,
+        -32
+      ],
+      "id": "d0975e64-9561-4ed6-aede-f86d694f73da",
+      "name": "ASSUME AGENDAMENTO",
+      "credentials": {
+        "postgres": {
+          "id": "tWbpNbv3AoQdJvyh",
+          "name": "postgres_cloudfy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE agendamentos SET status = 'concluido', updated_at = NOW() WHERE id = {{ $('Coleta acao').item.json.id }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        144,
+        160
+      ],
+      "id": "a517e9ed-7699-431d-883f-45daa2959a22",
+      "name": "CONCLUI AGENDAMENTO",
+      "credentials": {
+        "postgres": {
+          "id": "tWbpNbv3AoQdJvyh",
+          "name": "postgres_cloudfy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst agendamentos = items\n  .map(i => i.json)\n  .filter(a => a && a.id !== undefined && a.id !== null);\nreturn [{ json: { agendamentos } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        368,
+        -224
+      ],
+      "id": "a93f5470-9b0f-46fa-ada4-811f29d7b97a",
+      "name": "Monta resposta lista"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all();\n// Se retornou linha, conseguiu assumir. Se não retornou, já foi assumido por outra pessoa.\nif (rows.length > 0 && rows[0].json.id) {\n  return [{ json: { success: true, acao: 'assumir', mensagem: 'Atendimento assumido com sucesso!' } }];\n} else {\n  return [{ json: { success: false, acao: 'assumir', mensagem: 'Esta conversa já foi assumida por outra atendente. Passe para a próxima.' } }];\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        368,
+        -32
+      ],
+      "id": "845b4c5a-a5d2-4cab-820a-a5d2fd59eacd",
+      "name": "Monta resposta assumir"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { success: true, acao: 'concluir' } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        368,
+        160
+      ],
+      "id": "644dd20e-d94a-4021-8b73-3f92d2cea52c",
+      "name": "Monta resposta concluir"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        592,
+        -224
+      ],
+      "id": "56adb019-69ca-4e8d-b8c1-b92963fd93e3",
+      "name": "Responde lista"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        592,
+        -32
+      ],
+      "id": "c359e935-4afa-422f-8157-b162418bca3b",
+      "name": "Responde assumir"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        592,
+        160
+      ],
+      "id": "c7460b6e-85f5-4163-a99a-3dc878d4a08e",
+      "name": "Responde concluir"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM historico_conversas\nWHERE split_part(telefone, '@', 1) = '{{ $('Coleta acao').item.json.telefone }}'\nORDER BY created_at ASC",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        144,
+        352
+      ],
+      "id": "8bc8b632-bf9e-4c8e-adbe-bfa0420264dc",
+      "name": "BUSCA HISTORICO",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "tWbpNbv3AoQdJvyh",
+          "name": "postgres_cloudfy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst mensagens = items\n  .map(i => i.json)\n  .filter(m => m && m.id !== undefined && m.id !== null);\nreturn [{ json: { mensagens } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        368,
+        352
+      ],
+      "id": "91d7cc31-d62b-4b7a-8dcd-5b6337a3b300",
+      "name": "Monta resposta historico"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        592,
+        352
+      ],
+      "id": "a995af3c-6dca-43a3-8e9c-3bbb62985bca",
+      "name": "Responde historico"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "698419ba-611f-4d2f-8871-421161b97829",
+              "name": "telefone",
+              "value": "={{ $('Coleta acao').item.json.telefone.includes('@') ? $('Coleta acao').item.json.telefone : $('Coleta acao').item.json.telefone + '@s.whatsapp.net' }}",
+              "type": "string"
+            },
+            {
+              "id": "770d1aa4-3d6d-4fbc-a05b-ccc4e3f2d099",
+              "name": "remetente",
+              "value": "atendente",
+              "type": "string"
+            },
+            {
+              "id": "e98a85d0-8516-4fe0-9003-ac1e5ea6e008",
+              "name": "conteudo",
+              "value": "={{ $('Coleta acao').item.json.mensagem }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        592,
+        544
+      ],
+      "id": "8cf825f5-0f52-4b4e-a413-03516028daab",
+      "name": "Monta Historico Atendente"
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "historico_conversas",
+          "mode": "list",
+          "cachedResultName": "historico_conversas"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {
+            "id": 0
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "telefone",
+              "displayName": "telefone",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "remetente",
+              "displayName": "remetente",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "conteudo",
+              "displayName": "conteudo",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        816,
+        544
+      ],
+      "id": "66d53d89-e105-43c0-8b6c-dd2c2e13cde1",
+      "name": "REGISTRA HISTORICO ATENDENTE",
+      "credentials": {
+        "postgres": {
+          "id": "tWbpNbv3AoQdJvyh",
+          "name": "postgres_cloudfy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{ json: { success: true, acao: 'enviar_mensagem' } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        544
+      ],
+      "id": "1a67a29e-d30c-4a30-905d-1fa79c8191b7",
+      "name": "Monta resposta enviar_mensagem"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1264,
+        544
+      ],
+      "id": "462c6b79-e6d6-432b-ad55-e5106092ef67",
+      "name": "Responde enviar_mensagem"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://coldbloodedchameleon-evolution.cloudfy.live/message/sendText/CARDIOCENTER-OFICIAL",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "evolutionApi",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $json.telefoneFormatado }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $json.mensagemTexto }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        368,
+        544
+      ],
+      "id": "973840df-745a-4611-8e9d-d14c6592a63c",
+      "name": "ENVIA MENSAGEM PAINEL",
+      "credentials": {
+        "evolutionApi": {
+          "id": "egTwtDBKjAQXEBM4",
+          "name": "evolution_cloudfy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d08829e1-c6d7-4acc-987b-e080da1f7cf4",
+              "name": "telefoneFormatado",
+              "value": "={{ $('Coleta acao').item.json.telefone.includes('@') ? $('Coleta acao').item.json.telefone.split('@')[0] : $('Coleta acao').item.json.telefone }}",
+              "type": "string"
+            },
+            {
+              "id": "ca7702a1-cf08-42a6-8166-e81dd6de4718",
+              "name": "mensagemTexto",
+              "value": "={{ $('Coleta acao').item.json.mensagem }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        144,
+        544
+      ],
+      "id": "f4865a0d-8be1-4837-bb85-969378a8310b",
+      "name": "Monta Envio WhatsApp"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "token-check-001",
+              "leftValue": "={{ $json.body.token }}",
+              "rightValue": "g34lAtLX8APHTWLy8WHB3ZKLBNDFjylFs5wPRnA8BdpNghSz",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -528,
+        256
+      ],
+      "id": "1134b223-f60c-402b-bd57-4cbd95f63bf7",
+      "name": "Token valido?"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"erro\": \"nao_autorizado\" } }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "https://marcelloheck-arch.github.io"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -304,
+        352
+      ],
+      "id": "9ca9c59d-25aa-4470-abc2-aad3c3fbed17",
+      "name": "Responde nao autorizado"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Recebe requisicao painel": {
+      "main": [
+        [
+          {
+            "node": "Token valido?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Coleta acao": {
+      "main": [
+        [
+          {
+            "node": "Qual acao?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qual acao?": {
+      "main": [
+        [
+          {
+            "node": "BUSCA AGENDAMENTOS",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "ASSUME AGENDAMENTO",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "CONCLUI AGENDAMENTO",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Monta Envio WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "BUSCA HISTORICO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BUSCA AGENDAMENTOS": {
+      "main": [
+        [
+          {
+            "node": "Monta resposta lista",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ASSUME AGENDAMENTO": {
+      "main": [
+        [
+          {
+            "node": "Monta resposta assumir",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CONCLUI AGENDAMENTO": {
+      "main": [
+        [
+          {
+            "node": "Monta resposta concluir",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Monta resposta lista": {
+      "main": [
+        [
+          {
+            "node": "Responde lista",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Monta resposta assumir": {
+      "main": [
+        [
+          {
+            "node": "Responde assumir",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Monta resposta concluir": {
+      "main": [
+        [
+          {
+            "node": "Responde concluir",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Responde historico": {
+      "main": [
+        []
+      ]
+    },
+    "BUSCA HISTORICO": {
+      "main": [
+        [
+          {
+            "node": "Monta resposta historico",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Monta resposta historico": {
+      "main": [
+        [
+          {
+            "node": "Responde historico",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Monta Historico Atendente": {
+      "main": [
+        [
+          {
+            "node": "REGISTRA HISTORICO ATENDENTE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "REGISTRA HISTORICO ATENDENTE": {
+      "main": [
+        [
+          {
+            "node": "Monta resposta enviar_mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Monta resposta enviar_mensagem": {
+      "main": [
+        [
+          {
+            "node": "Responde enviar_mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ENVIA MENSAGEM PAINEL": {
+      "main": [
+        [
+          {
+            "node": "Monta Historico Atendente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Monta Envio WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "ENVIA MENSAGEM PAINEL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Token valido?": {
+      "main": [
+        [
+          {
+            "node": "Coleta acao",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responde nao autorizado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "2a4a2d85-cc28-4880-a897-400bd2688c61",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c927f4e855bfcf88573f9d48f065cc7b77841623bebcc9a1c0bd1c332f93c661"
+  },
+  "id": "LjUvfAGloovZtlVJ",
+  "tags": [
+    {
+      "updatedAt": "2026-06-06T17:25:06.336Z",
+      "createdAt": "2026-06-06T17:25:06.336Z",
+      "id": "I7rrzFYIafyUT4VM",
+      "name": "MARCELO HECK"
+    }
+  ]
+}
