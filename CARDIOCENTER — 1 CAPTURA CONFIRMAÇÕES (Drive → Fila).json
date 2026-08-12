@@ -1,0 +1,307 @@
+{
+  "name": "CARDIOCENTER — 1 CAPTURA CONFIRMAÇÕES (Drive → Fila)",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "https://drive.google.com/drive/folders/1L4T3XsSlfjSRJuc7ZQ3kN8mpZXUNRFq1",
+          "mode": "url"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        -304,
+        240
+      ],
+      "id": "8c75f582-780e-416e-84f5-58fb5ebecef5",
+      "name": "Trigger Novo Relatorio",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "oDNhkY46p2KjO7bC",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO arquivos_processados (drive_file_id, nome_arquivo) VALUES ('{{ $json.id }}', '{{ $json.name }}') ON CONFLICT (drive_file_id) DO NOTHING RETURNING id",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -64,
+        240
+      ],
+      "id": "11c0a5f1-19e6-429d-bfa4-20b0ed3e56f4",
+      "name": "Trava de Arquivo",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "tWbpNbv3AoQdJvyh",
+          "name": "postgres_cloudfy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "arquivo-novo",
+              "leftValue": "={{ $json.id.toString() }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        176,
+        240
+      ],
+      "id": "3083a4bf-abe9-4fa7-84ba-e387508ddb95",
+      "name": "Arquivo Ainda Nao Processado?"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Trigger Novo Relatorio').item.json.id }}"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        416,
+        160
+      ],
+      "id": "75b26058-ab24-425c-9606-081a9a70c5da",
+      "name": "Baixa Arquivo do Drive",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "oDNhkY46p2KjO7bC",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "delimiter": ";",
+          "headerRow": true
+        }
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        656,
+        160
+      ],
+      "id": "de5f1809-4df8-4a85-bf6b-9b3a4ac2f1fe",
+      "name": "Extrai Linhas CSV"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Normaliza cada linha e agrupa por paciente + dia\nconst raw = $input.all();\n\n// Protecao contra BOM: quando o CSV e salvo pelo Excel/LibreOffice, um\n// caractere invisivel as vezes gruda no nome da PRIMEIRA coluna do cabecalho\n// (ex: nome_paciente vira algo ilegivel), fazendo o campo sumir mesmo com\n// o dado preenchido no arquivo. Essa funcao acha o campo certo mesmo assim.\nfunction campo(obj, chave) {\n  if (obj[chave] !== undefined) return obj[chave];\n  const chaveEncontrada = Object.keys(obj).find(k => k.replace(/^\\uFEFF/, '').trim() === chave);\n  return chaveEncontrada ? obj[chaveEncontrada] : '';\n}\nfunction normalizaTelefone(tel) {\n  if (!tel) return '';\n  let digits = String(tel).replace(/\\D/g, '');\n  if (digits.length === 11) digits = '55' + digits;\n  else if (digits.length === 10) digits = '55' + digits;\n  return digits;\n}\n\nconst mapaServicos = {\n  '10101012': 'Consulta médica',\n  '40101010': 'ECG - Eletrocardiograma',\n  '40101037': 'Teste Ergométrico',\n  '40901106': 'Ecocardiograma Doppler Transtorácico',\n  '40901360': 'Ecocardiograma Doppler de Carótidas e Vertebrais'\n};\n\nfunction nomeServicoAmigavel(servicoBruto) {\n  const codigo = String(servicoBruto || '').split('-')[0].trim();\n  if (mapaServicos[codigo]) return mapaServicos[codigo];\n\n  // Fallback por palavra-chave: cobre MAPA/Holter e qualquer servico novo\n  // sem depender de eu conhecer o codigo de faturamento exato.\n  const texto = String(servicoBruto || '').toUpperCase();\n  if (texto.includes('MAPA')) return 'MAPA 24 horas';\n  if (texto.includes('HOLTER')) return 'Holter 24 horas';\n  if (texto.includes('ERGOM')) return 'Teste Ergométrico';\n  if (texto.includes('CAROT') || texto.includes('VASOS CERVICAIS')) return 'Ecocardiograma Doppler de Carótidas e Vertebrais';\n  if (texto.includes('TRANSTORAC')) return 'Ecocardiograma Doppler Transtorácico';\n  if (texto.includes('ECG') || texto.includes('ELETROCARDIOGRAMA')) return 'ECG - Eletrocardiograma';\n  if (texto.includes('CONSULTA')) return 'Consulta médica';\n\n  return servicoBruto || 'Atendimento';\n}\n// Verifica se o valor do campo medico_responsavel e um nome de medico de\n// verdade, ou um placeholder (ECG, MAPA, Holter, sem preferencia, etc.)\n// que na pratica significa \"sem medico definido para este atendimento\".\nfunction medicoValido(medicoBruto, servicoAmigavel) {\n  if (!medicoBruto) return false;\n  const m = medicoBruto.trim().toUpperCase();\n  const placeholders = [\n    'ECG', 'MAPA', 'HOLTER',\n    'SEM PREFERENCIA', 'SEM PREFERÊNCIA', 'SEM PREFERENCIA MEDICA', 'SEM PREFERÊNCIA MÉDICA',\n    'A DEFINIR', 'NAO DEFINIDO', 'NÃO DEFINIDO', 'INDIFERENTE', 'QUALQUER', 'QUALQUER MEDICO', 'QUALQUER MÉDICO',\n    '-', 'N/A', 'NA'\n  ];\n  if (placeholders.includes(m)) return false;\n  if (m === String(servicoAmigavel || '').toUpperCase()) return false;\n  return true;\n}\nfunction formataHora(hora) {\n  const h = String(hora || '').replace(/\\D/g, '');\n  if (h.length === 4) return `${h.slice(0,2)}:${h.slice(2)}`;\n  return hora;\n}\n\nconst grupos = {};\n\nfor (const item of raw) {\n  const j = item.json;\n  const nome = String(campo(j, 'nome_paciente') || '').trim();\n  const telefoneOriginal = String(j.telefone_whatsapp || '').trim();\n  const data = String(j.data_consulta || '').trim();\n  const horaBruta = String(j.hora_consulta_exame || '').trim();\n  const medicoBruto = String(j.medico_responsavel || '').trim();\n  const servico = nomeServicoAmigavel(j.servico);\n\n  const telefone = normalizaTelefone(telefoneOriginal);\n  if (!telefone || telefone.length < 12) continue; // sem telefone valido = bloqueio interno de agenda\n\n  // linhas marcadas como \"Retorno\" (prazo de retorno sem cobrar nova consulta) nao sao\n  // pacientes agendados de verdade - descarta mesmo que por engano venha com telefone\n  if (nome.trim().toUpperCase() === 'RETORNO') continue;\n\n  const chave = `${telefone}_${data}`;\n  if (!grupos[chave]) grupos[chave] = { chave, telefone, nome, data, itens: [] };\n\n  const medico = medicoValido(medicoBruto, servico) ? medicoBruto : null;\n  grupos[chave].itens.push({ hora: formataHora(horaBruta), medico, servico });\n}\n\nconst resultado = Object.values(grupos).map(g => {\n  g.itens.sort((a, b) => a.hora.localeCompare(b.hora));\n  return g;\n});\n\nreturn resultado.map(g => ({ json: g }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        160
+      ],
+      "id": "5e41e47b-7aa6-425d-9f76-cc49dca0c29b",
+      "name": "Normaliza e Agrupa por Paciente"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => {\n  const g = item.json;\n  const linhas = g.itens.map(it => {\n    const medicoTexto = it.medico ? ` com ${it.medico}` : '';\n    return `- ${it.hora} - ${it.servico}${medicoTexto}`;\n  });\n  const primeiroNome = (g.nome || '').split(' ')[0] || 'Paciente';\n  const mensagem = `Ola, ${primeiroNome}! Aqui e da Clinica Cardiocenter.\\n\\nConfirmando seu agendamento para o dia ${g.data}:\\n${linhas.join('\\n')}\\n\\nPor favor responda:\\n1 - Confirmo minha presenca\\n2 - Preciso remarcar ou cancelar`;\n  const resumo = linhas.join(' | ');\n  return { json: { ...g, mensagem, resumo } };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1136,
+        160
+      ],
+      "id": "a0ba9a68-f3ec-46f0-b080-15764426b544",
+      "name": "Monta Mensagem de Confirmacao"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO fila_confirmacoes (chave, telefone, nome, data, resumo, mensagem, status) VALUES ('{{ $json.chave }}', '{{ $json.telefone }}', '{{ $json.nome.replace(/'/g, \"''\") }}', '{{ $json.data }}', '{{ $json.resumo.replace(/'/g, \"''\") }}', '{{ $json.mensagem.replace(/'/g, \"''\") }}', 'pendente') ON CONFLICT (chave) DO NOTHING",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1376,
+        160
+      ],
+      "id": "01d3711f-4b7c-48bf-97ea-2a9152c3c5e4",
+      "name": "Insere na Fila (pendente)",
+      "credentials": {
+        "postgres": {
+          "id": "tWbpNbv3AoQdJvyh",
+          "name": "postgres_cloudfy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "CARDIOCENTER — CAPTURA CONFIRMAÇÕES (Drive → Fila) — fica rodando sozinho, verificando a pasta do Drive a cada minuto"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        -112
+      ],
+      "id": "7ead2fd9-aed5-4b57-9327-7bb9400552f0",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- RESET DE TESTE — Confirmador de Consultas (CARDIOCENTER)\n-- Uso: rodar este bloco inteiro ANTES de cada rodada de teste, sempre que\n-- quiser reprocessar o MESMO CSV / MESMO paciente de teste do zero.\n--\n-- IMPORTANTE: isso é só para o AMBIENTE DE TESTE. Em produção este reset\n-- nunca é necessário — cada dia gera uma chave (telefone+data) diferente\n-- naturalmente, então não há colisão com dias anteriores.\n--\n-- Troque os números de telefone abaixo pelos que você está usando no teste.\n\n-- 1) Limpa a fila inteira (ou troque por WHERE telefone = '...' se quiser\n-- preservar outros registros de teste)\nDELETE FROM fila_confirmacoes;\n\n-- 2) Libera o(s) arquivo(s) do Drive para serem reprocessados pelo Workflow 1\n-- (a trava é pelo ID do arquivo, não pelo conteúdo — por isso pode manter\n-- o mesmo CSV parado na pasta, sem precisar subir um novo toda vez)\nDELETE FROM arquivos_processados;\n\n-- 3) Limpa o estado de conversa do(s) telefone(s) de teste — troque pelos\n-- números que você está usando. Cobre as duas variantes (com e sem o\n-- 9º dígito), já que o WhatsApp pode reportar qualquer uma das duas.\nDELETE FROM estado_conversa\nWHERE session_key LIKE '5548988720983%'   -- Marcelo (com 9)\n   OR session_key LIKE '554888720983%';   -- Marcelo (sem 9)\n\n-- Depois de rodar isto:\n-- 1. Rode o Workflow 1 (Test workflow) — sem precisar subir CSV novo.\n-- 2. Confirme: SELECT chave, telefone, status FROM fila_confirmacoes;\n-- (deve aparecer com status = 'pendente')\n-- 3. Só então rode o Workflow 2.\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        448,
+        -16
+      ],
+      "id": "b7b25408-8d00-419f-809f-ea4f34df2f94",
+      "name": "Execute a SQL query",
+      "credentials": {
+        "postgres": {
+          "id": "tWbpNbv3AoQdJvyh",
+          "name": "postgres_cloudfy"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Trigger Novo Relatorio": {
+      "main": [
+        [
+          {
+            "node": "Trava de Arquivo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trava de Arquivo": {
+      "main": [
+        [
+          {
+            "node": "Arquivo Ainda Nao Processado?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Arquivo Ainda Nao Processado?": {
+      "main": [
+        [
+          {
+            "node": "Baixa Arquivo do Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Baixa Arquivo do Drive": {
+      "main": [
+        [
+          {
+            "node": "Extrai Linhas CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrai Linhas CSV": {
+      "main": [
+        [
+          {
+            "node": "Normaliza e Agrupa por Paciente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normaliza e Agrupa por Paciente": {
+      "main": [
+        [
+          {
+            "node": "Monta Mensagem de Confirmacao",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Monta Mensagem de Confirmacao": {
+      "main": [
+        [
+          {
+            "node": "Insere na Fila (pendente)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "24a08b69-94f2-42ac-a5bc-c7983dd65f0b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c927f4e855bfcf88573f9d48f065cc7b77841623bebcc9a1c0bd1c332f93c661"
+  },
+  "id": "AvhBOYQMyCz0YfNq",
+  "tags": []
+}
