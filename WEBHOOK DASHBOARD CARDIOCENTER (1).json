@@ -1,0 +1,449 @@
+{
+  "name": "WEBHOOK DASHBOARD CARDIOCENTER",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "dashboard-cardiocenter",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        896,
+        592
+      ],
+      "id": "45dd97da-be71-4565-8654-c78988ae384c",
+      "name": "Recebe requisicao dashboard",
+      "webhookId": "dashboard-cardiocenter-stats"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "token-dash-001",
+              "leftValue": "={{ $json.body.token }}",
+              "rightValue": "2af665d22d097e069c31d8fba6bab93a93c8edcf770a4d088b43e22b6cbcda0b",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1120,
+        592
+      ],
+      "id": "c123c371-4af8-4ae7-87cc-ac6c0821aff4",
+      "name": "Token valido dash?"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"erro\": \"nao_autorizado\" } }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "https://marcelloheck-arch.github.io"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1344,
+        688
+      ],
+      "id": "9c026f97-d60e-4523-ad71-170811083638",
+      "name": "Responde nao autorizado dash"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d-inicio",
+              "name": "data_inicio",
+              "value": "={{ $json.body.data_inicio }}",
+              "type": "string"
+            },
+            {
+              "id": "d-fim",
+              "name": "data_fim",
+              "value": "={{ $json.body.data_fim }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1344,
+        496
+      ],
+      "id": "e95b3e9b-0586-489b-8db8-3f91d795a592",
+      "name": "Coleta periodo"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n\nCOUNT(*) AS total_agendamentos,\n\nCOUNT(*) FILTER (WHERE status = 'concluido') AS total_concluidos,\n\nCOUNT(*) FILTER (WHERE status = 'em_atendimento') AS em_atendimento,\n\nCOUNT(*) FILTER (WHERE status = 'pendente') AS pendentes,\n\nROUND((AVG(EXTRACT(EPOCH FROM (updated_at - created_at)) / 60) FILTER (WHERE status <> 'pendente'))::numeric, 1) AS sla_medio_minutos,\n\nROUND((MIN(EXTRACT(EPOCH FROM (updated_at - created_at)) / 60) FILTER (WHERE status <> 'pendente'))::numeric, 1) AS sla_minimo_minutos,\n\nROUND((MAX(EXTRACT(EPOCH FROM (updated_at - created_at)) / 60) FILTER (WHERE status <> 'pendente'))::numeric, 1) AS sla_maximo_minutos\n\nFROM agendamentos\n\nWHERE created_at >= ('{{ $('Coleta periodo').first().json.data_inicio }}'::timestamp AT TIME ZONE 'America/Sao_Paulo')\n\nAND created_at <= ('{{ $('Coleta periodo').first().json.data_fim }}'::timestamp AT TIME ZONE 'America/Sao_Paulo')",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1568,
+        496
+      ],
+      "id": "1c848cc1-907b-4712-a337-c32793569c28",
+      "name": "STATS GERAIS",
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "postgres": {
+          "id": "tWbpNbv3AoQdJvyh",
+          "name": "postgres_cloudfy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  COUNT(*) FILTER (WHERE remetente = 'agente') AS msgs_agente,\n  COUNT(DISTINCT split_part(telefone, '@', 1)) AS pacientes_unicos\nFROM historico_conversas\nWHERE created_at >= ('{{ $('Coleta periodo').first().json.data_inicio }}'::timestamp AT TIME ZONE 'America/Sao_Paulo')\n  AND created_at <= ('{{ $('Coleta periodo').first().json.data_fim }}'::timestamp AT TIME ZONE 'America/Sao_Paulo')\n\n  -- Ignora meus números de teste\n  AND split_part(telefone, '@', 1) NOT IN (\n      '554888720983',\n      '554899314665'\n  );",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1792,
+        496
+      ],
+      "id": "1e3d4148-7280-48eb-ba26-7aef8a71ed67",
+      "name": "MENSAGENS AGENTE",
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "postgres": {
+          "id": "tWbpNbv3AoQdJvyh",
+          "name": "postgres_cloudfy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    convenio,\n    COUNT(*) AS total,\n    ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER (), 1) AS percentual\nFROM agendamentos\nWHERE created_at >= ('{{ $('Coleta periodo').first().json.data_inicio }}'::timestamp AT TIME ZONE 'America/Sao_Paulo')\nAND created_at <= ('{{ $('Coleta periodo').first().json.data_fim }}'::timestamp AT TIME ZONE 'America/Sao_Paulo')\n\nAND telefone NOT LIKE '%554888720983%'\nAND telefone NOT LIKE '%554899314665%'\n\nAND convenio IS NOT NULL\nGROUP BY convenio\nORDER BY total DESC\nLIMIT 10;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2016,
+        496
+      ],
+      "id": "ce9c1ecc-e268-4965-ba67-0d7d22e1956c",
+      "name": "RANKING CONVENIOS",
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "postgres": {
+          "id": "tWbpNbv3AoQdJvyh",
+          "name": "postgres_cloudfy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    EXTRACT(HOUR FROM (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'America/Sao_Paulo')) AS hora,\n    COUNT(*) AS total\nFROM agendamentos\nWHERE created_at >= ('{{ $('Coleta periodo').first().json.data_inicio }}'::timestamp AT TIME ZONE 'America/Sao_Paulo')\nAND created_at <= ('{{ $('Coleta periodo').first().json.data_fim }}'::timestamp AT TIME ZONE 'America/Sao_Paulo')\n\nAND telefone NOT LIKE '%554888720983%'\nAND telefone NOT LIKE '%554899314665%'\n\nGROUP BY hora\nORDER BY hora;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2240,
+        496
+      ],
+      "id": "6c1520af-37e2-4aac-8d74-a1910049a0b8",
+      "name": "HORARIOS PICO",
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "postgres": {
+          "id": "tWbpNbv3AoQdJvyh",
+          "name": "postgres_cloudfy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    servico,\n    COUNT(*) AS total\nFROM agendamentos\nWHERE created_at >= ('{{ $('Coleta periodo').first().json.data_inicio }}'::timestamp AT TIME ZONE 'America/Sao_Paulo')\nAND created_at <= ('{{ $('Coleta periodo').first().json.data_fim }}'::timestamp AT TIME ZONE 'America/Sao_Paulo')\n\nAND telefone NOT LIKE '%554888720983%'\nAND telefone NOT LIKE '%554899314665%'\n\nAND servico IS NOT NULL\nGROUP BY servico\nORDER BY total DESC;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2464,
+        496
+      ],
+      "id": "3239c9b8-d635-4e33-a095-2232c4bbc61c",
+      "name": "RANKING SERVICOS",
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "postgres": {
+          "id": "tWbpNbv3AoQdJvyh",
+          "name": "postgres_cloudfy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Remove itens fantasma gerados pelo Always Output Data (bug #5 do projeto)\nconst limpa = arr => arr.filter(x => x && Object.keys(x).length > 0 && x.total !== undefined && x.total !== null);\n\nconst gerais = $('STATS GERAIS').first().json || {};\nconst msgs = $('MENSAGENS AGENTE').first().json || {};\nconst convenios = limpa($('RANKING CONVENIOS').all().map(i => i.json));\nconst horarios = limpa($('HORARIOS PICO').all().map(i => i.json));\nconst servicos = limpa($('RANKING SERVICOS').all().map(i => i.json));\n\n// Fila ao vivo (aguardando + em atendimento) — independente do período selecionado\nconst filaBruta = $('FILA AO VIVO').all().map(i => i.json).filter(x => x && x.nome);\nconst aguardando = filaBruta.filter(x => x.status === 'pendente').map(x => ({\n  nome: x.nome,\n  tipo: x.tipo_solicitacao || 'novo',\n  minutos: parseInt(x.minutos_espera) || 0\n}));\nconst emAtendimento = filaBruta.filter(x => x.status === 'em_atendimento').map(x => ({\n  nome: x.nome,\n  tipo: x.tipo_solicitacao || 'novo',\n  minutos: parseInt(x.minutos_espera) || 0\n}));\n\nconst total = parseInt(gerais.total_agendamentos) || 0;\n\n// Tempo trabalhado: estimativa (~8 min por pré-agendamento completo)\nconst minutosAgente = total * 8;\nconst horasAgente = Math.floor(minutosAgente / 60);\nconst minRestantes = minutosAgente % 60;\n\n// Perguntas respondidas: DADO REAL — mensagens do agente em historico_conversas\nconst perguntasRespondidas = parseInt(msgs.msgs_agente) || 0;\n\nreturn [{\n  json: {\n    periodo: {\n      inicio: $('Coleta periodo').first().json.data_inicio,\n      fim: $('Coleta periodo').first().json.data_fim\n    },\n    resumo: {\n      total_agendamentos: total,\n      total_concluidos: parseInt(gerais.total_concluidos) || 0,\n      em_atendimento: parseInt(gerais.em_atendimento) || 0,\n      pendentes: parseInt(gerais.pendentes) || 0,\n      perguntas_respondidas: perguntasRespondidas,\n      pacientes_unicos: parseInt(msgs.pacientes_unicos) || 0,\n      tempo_agente_horas: horasAgente,\n      tempo_agente_minutos: minRestantes\n    },\n    sla: {\n      medio_minutos: parseFloat(gerais.sla_medio_minutos) || 0,\n      minimo_minutos: parseFloat(gerais.sla_minimo_minutos) || 0,\n      maximo_minutos: parseFloat(gerais.sla_maximo_minutos) || 0\n    },\n    convenios: convenios,\n    horarios_pico: horarios,\n    servicos: servicos,\n    fila_aguardando: aguardando,\n    fila_em_atendimento: emAtendimento\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2912,
+        496
+      ],
+      "id": "f18d4b74-3dd6-421c-9486-d4f9e05e27a3",
+      "name": "MONTA DASHBOARD"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        3136,
+        496
+      ],
+      "id": "3360d5b2-0697-4091-999b-e4a5551ee160",
+      "name": "Responde dashboard"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    nome,\n    tipo_solicitacao,\n    status,\n    ROUND(EXTRACT(EPOCH FROM (NOW() - created_at)) / 60)::int AS minutos_espera\nFROM agendamentos\nWHERE status IN ('pendente', 'em_atendimento')\n\nAND telefone NOT LIKE '%554888720983%'\nAND telefone NOT LIKE '%554899314665%'\n\nORDER BY created_at ASC;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2688,
+        496
+      ],
+      "id": "e84a39ca-a48b-4b2e-a9ac-1d3ff0932b7e",
+      "name": "FILA AO VIVO",
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "postgres": {
+          "id": "tWbpNbv3AoQdJvyh",
+          "name": "postgres_cloudfy"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Recebe requisicao dashboard": {
+      "main": [
+        [
+          {
+            "node": "Token valido dash?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Token valido dash?": {
+      "main": [
+        [
+          {
+            "node": "Coleta periodo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responde nao autorizado dash",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Coleta periodo": {
+      "main": [
+        [
+          {
+            "node": "STATS GERAIS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "STATS GERAIS": {
+      "main": [
+        [
+          {
+            "node": "MENSAGENS AGENTE",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MENSAGENS AGENTE": {
+      "main": [
+        [
+          {
+            "node": "RANKING CONVENIOS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RANKING CONVENIOS": {
+      "main": [
+        [
+          {
+            "node": "HORARIOS PICO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HORARIOS PICO": {
+      "main": [
+        [
+          {
+            "node": "RANKING SERVICOS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RANKING SERVICOS": {
+      "main": [
+        [
+          {
+            "node": "FILA AO VIVO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MONTA DASHBOARD": {
+      "main": [
+        [
+          {
+            "node": "Responde dashboard",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FILA AO VIVO": {
+      "main": [
+        [
+          {
+            "node": "MONTA DASHBOARD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "7c11312a-9a8b-4d66-ae82-c0617dc4f530",
+  "meta": {
+    "instanceId": "c927f4e855bfcf88573f9d48f065cc7b77841623bebcc9a1c0bd1c332f93c661"
+  },
+  "id": "tzR838Xjqx9Mv5DM",
+  "tags": [
+    {
+      "updatedAt": "2026-06-06T17:25:06.336Z",
+      "createdAt": "2026-06-06T17:25:06.336Z",
+      "id": "I7rrzFYIafyUT4VM",
+      "name": "MARCELO HECK"
+    }
+  ]
+}
