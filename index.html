@@ -2231,15 +2231,14 @@ async function carregar() {
   if (!cfObterToken()) { cfMostrarTelaToken(); return; }
   document.getElementById('cf-lista').innerHTML = '<div class="carregando">Carregando confirmações...</div>';
 
-  const dataInicio = document.getElementById('dataInicio').value || null;
+    const dataInicio = document.getElementById('dataInicio').value || null;
   const dataFim = document.getElementById('dataFim').value || null;
-  const porEnvio = periodoAtivo === 'todos';
 
   try {
     const res = await fetch(WEBHOOK_URL_CONF, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ acao: 'listar', token: cfObterToken(), dataInicio, dataFim, porEnvio })
+      body: JSON.stringify({ acao: 'listar', token: cfObterToken(), dataInicio, dataFim })
     });
     const data = await res.json();
     if (data && data.erro === 'nao_autorizado') {
@@ -2297,7 +2296,29 @@ function filtrarStatus(status) {
   renderizarContadores();
   cfRenderizarLista();
 }
-
+async function mostrarEnviadosHoje() {
+  document.getElementById('cf-lista').innerHTML = '<div class="carregando">Carregando confirmações...</div>';
+  try {
+    const res = await fetch(WEBHOOK_URL_CONF, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ acao: 'listar', token: cfObterToken(), dataInicio: null, dataFim: null, porEnvio: true })
+    });
+    const data = await res.json();
+    if (data && data.erro === 'nao_autorizado') {
+      localStorage.removeItem(CHAVE_TOKEN_CONF);
+      cfMostrarTelaToken();
+      return;
+    }
+    todasConfirmacoes = data.confirmacoes || [];
+    statusAtivo = 'todos';
+    linhaAberta = null;
+    renderizarContadores();
+    cfRenderizarLista();
+  } catch (e) {
+    cfMostrarToast('Erro ao carregar confirmações.', 'erro');
+  }
+}
 function normalizar(txt) {
   return (txt || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 }
