@@ -2233,12 +2233,13 @@ async function carregar() {
 
   const dataInicio = document.getElementById('dataInicio').value || null;
   const dataFim = document.getElementById('dataFim').value || null;
+  const porEnvio = periodoAtivo === 'hoje';
 
   try {
     const res = await fetch(WEBHOOK_URL_CONF, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ acao: 'listar', token: cfObterToken(), dataInicio, dataFim })
+      body: JSON.stringify({ acao: 'listar', token: cfObterToken(), dataInicio, dataFim, porEnvio })
     });
     const data = await res.json();
     if (data && data.erro === 'nao_autorizado') {
