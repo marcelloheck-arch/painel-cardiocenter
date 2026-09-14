@@ -2233,7 +2233,7 @@ async function carregar() {
 
   const dataInicio = document.getElementById('dataInicio').value || null;
   const dataFim = document.getElementById('dataFim').value || null;
-  const porEnvio = periodoAtivo === 'hoje';
+  const porEnvio = periodoAtivo === 'todos';
 
   try {
     const res = await fetch(WEBHOOK_URL_CONF, {
