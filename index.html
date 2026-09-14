@@ -2073,7 +2073,7 @@ window.addEventListener('DOMContentLoaded', function() {
   <button class="periodo-btn ativo" data-periodo="hoje" onclick="selecionarPeriodo('hoje', this)">Hoje</button>
   <button class="periodo-btn" data-periodo="semana" onclick="selecionarPeriodo('semana', this)">Esta semana</button>
   <button class="periodo-btn" data-periodo="mes" onclick="selecionarPeriodo('mes', this)">Este mês</button>
-  <button class="periodo-btn" data-periodo="todos" onclick="selecionarPeriodo('todos', this)">Enviados</button>
+  <button class="periodo-btn" data-periodo="todos" onclick="selecionarPeriodo('todos', this)">Todos</button>
   <div class="periodo-custom">
     <span class="periodo-custom-label">ou de</span>
     <input type="date" id="dataInicio" onchange="selecionarPeriodo('custom')">
@@ -2268,9 +2268,9 @@ function renderizarContadores() {
   ORDEM_STATUS.forEach(s => contagens[s] = 0);
   todasConfirmacoes.forEach(c => { if (contagens[c.status] !== undefined) contagens[c.status]++; });
 
-  const cardTodos = `
+    const cardTodos = `
     <div class="contador-card${statusAtivo === 'todos' ? ' ativo' : ''}" onclick="filtrarStatus('todos')">
-      <div class="contador-icone todos"><svg class="icone-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg></div>
+      <div class="contador-icone todos">...</div>
       <div>
         <div class="contador-numero">${todasConfirmacoes.length}</div>
         <div class="contador-label">Todos</div>
