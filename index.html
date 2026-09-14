@@ -2267,12 +2267,12 @@ function renderizarContadores() {
   ORDEM_STATUS.forEach(s => contagens[s] = 0);
   todasConfirmacoes.forEach(c => { if (contagens[c.status] !== undefined) contagens[c.status]++; });
 
-    const cardTodos = `
-    <div class="contador-card${statusAtivo === 'todos' ? ' ativo' : ''}" onclick="filtrarStatus('todos')">
-      <div class="contador-icone todos">...</div>
+      const cardTodos = `
+    <div class="contador-card${statusAtivo === 'todos' ? ' ativo' : ''}" onclick="mostrarEnviadosHoje()">
+      <div class="contador-icone todos"><svg class="icone-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg></div>
       <div>
         <div class="contador-numero">${todasConfirmacoes.length}</div>
-        <div class="contador-label">Todos</div>
+        <div class="contador-label">Enviados</div>
       </div>
     </div>`;
 
