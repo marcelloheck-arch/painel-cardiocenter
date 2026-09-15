@@ -955,7 +955,7 @@ body {
     flex: 1 1 120px; box-sizing: border-box;
     background: var(--branco); border-radius: var(--raio-md); padding: 8px 9px; border: 1px solid var(--cinza-borda);
     box-shadow: var(--sombra-1); display: flex; align-items: center; gap: 7px; min-width: 0; cursor: pointer; transition: box-shadow 0.15s;
-  }#tabConfirmacoes .contador-card:hover { box-shadow: var(--sombra-2); }#tabConfirmacoes .contador-card.ativo { border-color: var(--azul); box-shadow: 0 0 0 2px rgba(37,99,235,0.15); }#tabConfirmacoes .contador-icone { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }#tabConfirmacoes .contador-icone .icone-svg { width: 13px; height: 13px; }#tabConfirmacoes .contador-icone.confirmado { background: var(--verde-claro); }#tabConfirmacoes .contador-icone.reagendado { background: var(--roxo-claro); }#tabConfirmacoes .contador-icone.cancelado { background: var(--vermelho-claro); }#tabConfirmacoes .contador-icone.nao-respondeu { background: var(--amarelo-claro); }#tabConfirmacoes .contador-icone.pendente { background: var(--azul-claro); }#tabConfirmacoes .contador-icone.erro { background: var(--cinza-status-claro); }#tabConfirmacoes .contador-icone.todos { background: var(--cinza-fundo); color: var(--cinza-texto); }#tabConfirmacoes .contador-numero { font-size: 15px; font-weight: 600; line-height: 1.1; }#tabConfirmacoes .contador-label { font-size: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; color: var(--cinza-texto); line-height: 1.25; }#tabConfirmacoes .barra-controles { display: flex; align-items: center; gap: 10px; padding: 14px 24px 0; flex-wrap: wrap; max-width: 1180px; }#tabConfirmacoes .filtros { display: flex; gap: 8px; flex-wrap: wrap; flex: 1 1 auto; }#tabConfirmacoes .filtro-btn {
+  }#tabConfirmacoes .contador-card:hover { box-shadow: var(--sombra-2); }#tabConfirmacoes .contador-card.ativo { border-color: var(--azul); box-shadow: 0 0 0 2px rgba(37,99,235,0.15); }#tabConfirmacoes .contador-icone { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }#tabConfirmacoes .contador-icone .icone-svg { width: 13px; height: 13px; }#tabConfirmacoes .contador-icone.confirmado { background: var(--verde-claro); }#tabConfirmacoes .contador-icone.reagendado { background: var(--roxo-claro); }#tabConfirmacoes .contador-icone.cancelado { background: var(--vermelho-claro); }#tabConfirmacoes .contador-icone.nao-respondeu { background: var(--amarelo-claro); }#tabConfirmacoes .contador-icone.pendente { background: var(--azul-claro); }#tabConfirmacoes .contador-icone.erro { background: var(--cinza-status-claro); }#tabConfirmacoes .contador-icone.todos { background: var(--cinza-fundo); color: var(--cinza-texto); }#tabConfirmacoes .contador-icone.todos { background: var(--cinza-fundo); color: var(--cinza-texto); }#tabConfirmacoes .contador-icone.enviados { background: var(--cinza-fundo); color: var(--cinza-texto); }#tabConfirmacoes .contador-numero { font-size: 15px; font-weight: 600; line-height: 1.1; }#tabConfirmacoes .contador-label { font-size: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; color: v#tabConfirmacoes .contador-numero { font-size: 15px; font-weight: 600; line-height: 1.1; }#tabConfirmacoes .contador-label { font-size: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; color: var(--cinza-texto); line-height: 1.25; }#tabConfirmacoes .barra-controles { display: flex; align-items: center; gap: 10px; padding: 14px 24px 0; flex-wrap: wrap; max-width: 1180px; }#tabConfirmacoes .filtros { display: flex; gap: 8px; flex-wrap: wrap; flex: 1 1 auto; }#tabConfirmacoes .filtro-btn {
     padding: 6px 13px; border-radius: 4px; border: 1px solid transparent; background: transparent;
     font-size: 12.5px; font-weight: 500; color: var(--cinza-texto); cursor: pointer; transition: all 0.15s;
   }#tabConfirmacoes .filtro-btn:hover { background: var(--cinza-fundo); color: var(--preto); }#tabConfirmacoes .filtro-btn.ativo { background: var(--azul-claro); border-color: transparent; color: var(--azul-escuro); font-weight: 600; }#tabConfirmacoes .busca-wrap { position: relative; min-width: 220px; }#tabConfirmacoes .busca-input {
@@ -1054,7 +1054,7 @@ body {
   #tabAgendamentos .kpi-row,
   #tabConfirmacoes .contadores { padding: 12px 14px 0; gap: 8px; }
   #tabAgendamentos .kpi-card,
-  #tabConfirmacoes .contador-card { flex: 1 1 calc(50% - 4px); min-width: 0; }
+  #tabConfirmacoes .contador-card {    flex: 1 1 100px; box-sizing: border-box; }
   #tabAgendamentos .colunas,
   #tabConfirmacoes .lista,
   #tabConfirmacoes .barra-controles,
@@ -2199,7 +2199,7 @@ let linhaAberta = null;
 function calcularDatas(periodo) {
   const hoje = new Date();
   const iso = (d) => d.toISOString().slice(0, 10);
-  if (periodo === 'hoje') return { dataInicio: iso(hoje), dataFim: iso(hoje) };
+   if (periodo === 'hoje') return { dataInicio: null, dataFim: null };
   if (periodo === 'semana') {
     const diaSemana = hoje.getDay();
     const inicio = new Date(hoje); inicio.setDate(hoje.getDate() - diaSemana);
@@ -2231,14 +2231,15 @@ async function carregar() {
   if (!cfObterToken()) { cfMostrarTelaToken(); return; }
   document.getElementById('cf-lista').innerHTML = '<div class="carregando">Carregando confirmações...</div>';
 
-    const dataInicio = document.getElementById('dataInicio').value || null;
+     const dataInicio = document.getElementById('dataInicio').value || null;
   const dataFim = document.getElementById('dataFim').value || null;
+  const porEnvio = periodoAtivo === 'hoje';
 
   try {
     const res = await fetch(WEBHOOK_URL_CONF, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ acao: 'listar', token: cfObterToken(), dataInicio, dataFim })
+      body: JSON.stringify({ acao: 'listar', token: cfObterToken(), dataInicio, dataFim, porEnvio })
     });
     const data = await res.json();
     if (data && data.erro === 'nao_autorizado') {
@@ -2267,11 +2268,20 @@ function renderizarContadores() {
   ORDEM_STATUS.forEach(s => contagens[s] = 0);
   todasConfirmacoes.forEach(c => { if (contagens[c.status] !== undefined) contagens[c.status]++; });
 
-      const cardTodos = `
-    <div class="contador-card${statusAtivo === 'todos' ? ' ativo' : ''}" onclick="mostrarEnviadosHoje()">
+     const totalEnviados = todasConfirmacoes.filter(c => c.status !== 'pendente' && c.status !== 'erro').length;
+
+const cardTodos = `
+    <div class="contador-card${statusAtivo === 'todos' ? ' ativo' : ''}" onclick="filtrarStatus('todos')">
       <div class="contador-icone todos"><svg class="icone-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg></div>
       <div>
         <div class="contador-numero">${todasConfirmacoes.length}</div>
+        <div class="contador-label">Todos</div>
+      </div>
+    </div>
+    <div class="contador-card${statusAtivo === 'enviados' ? ' ativo' : ''}" onclick="filtrarStatus('enviados')">
+      <div class="contador-icone enviados"><svg class="icone-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 12.5 6 16.5 13 8.5"/><polyline points="11 12.5 14 15.5 21 7.5"/></svg></div>
+      <div>
+        <div class="contador-numero">${totalEnviados}</div>
         <div class="contador-label">Enviados</div>
       </div>
     </div>`;
@@ -2342,7 +2352,12 @@ function cfRenderizarLista() {
   const termoBusca = normalizar(document.getElementById('buscaInput').value);
   const ordenacao = document.getElementById('ordenacaoSelect').value;
 
-  let filtradas = (statusAtivo === 'todos' ? todasConfirmacoes : todasConfirmacoes.filter(c => c.status === statusAtivo));
+  let filtradas = todasConfirmacoes;
+  if (statusAtivo === 'enviados') {
+    filtradas = todasConfirmacoes.filter(c => c.status !== 'pendente' && c.status !== 'erro');
+  } else if (statusAtivo !== 'todos') {
+    filtradas = todasConfirmacoes.filter(c => c.status === statusAtivo);
+  }
 
   if (termoBusca) {
     filtradas = filtradas.filter(c =>
