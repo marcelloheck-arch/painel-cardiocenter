@@ -2404,7 +2404,7 @@ function cfRenderizarLista() {
           ${c.resumo ? `<div class="linha-nome-sub">${c.resumo.slice(0, 60)}${c.resumo.length > 60 ? '…' : ''}</div>` : ''}
           <div class="linha-cabeca-badges">
             <span class="badge ${c.status}">${meta.label}</span>
-            ${c.tipo_lembrete ? `<span class="badge-lembrete">${c.tipo_lembrete}</span>` : ''}
+            ${c.tipo_lembrete && !['pessoal', 'teste_pessoal'].includes(c.tipo_lembrete) ? `<span class="badge-lembrete">${c.tipo_lembrete}</span>` : ''}
           </div>
           <div class="linha-cabeca-meta">
             <span class="linha-data">Consulta: ${c.data || '—'}</span>
