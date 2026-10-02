@@ -1474,6 +1474,12 @@ function criarCard(a) {
           <div class="campo-valor">${tel || '—'}</div>
         </div>`;
   }
+  
+  corpoHTML += `
+        <div class="campo full">
+          <div class="campo-label">Atendido por</div>
+          <div class="campo-valor">${a.atendente || '—'}</div>
+        </div>`;
 
   const subInfo = tipo === 'novo' ? (a.servico || 'Serviço não informado') : (tipo === 'cancelamento' ? 'Cancelamento' : 'Remarcação');
   const aberta = filaAberta === a.id;
@@ -1489,7 +1495,7 @@ function criarCard(a) {
           <span class="fila-status-dot"></span>
           <div class="fila-nome">${nome}</div>
         </div>
-        <div class="fila-sub">${subInfo}${a.atendente && a.status === 'em_atendimento' ? ' · ' + a.atendente : ''}</div>
+        <div class="fila-sub">${subInfo}${a.atendente && a.status !== 'pendente' ? ' · ' + a.atendente : ''}</div>
         ${tipoTagHTML ? `<div style="margin-left:13px">${tipoTagHTML}</div>` : ''}
         <div class="fila-linha-meta">
           <span class="fila-data">${dataFormatada}</span>
@@ -1616,7 +1622,7 @@ async function concluir(id) {
     await fetch(WEBHOOK_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ acao: 'concluir', id, token: obterToken() })
+      body: JSON.stringify({ acao: 'concluir', id, atendente: obterAtendenteIdentificada(), token: obterToken() })
     });
     mostrarToast('Marcado como concluído!', 'sucesso');
     await carregarAgendamentos();
