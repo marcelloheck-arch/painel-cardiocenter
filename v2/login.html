@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Cardiocenter — Entrar</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --marinho:#0B3A5B; --azul:#1769AA; --azul-escuro:#0B3A5B; --azul-claro:#EAF4FA;
+  --branco:#fff; --cinza-fundo:#F4F6F8; --cinza-borda:#E4E9EF; --cinza-texto:#5F6B76; --preto:#1B2733;
+  --vermelho:#D9524F; --vermelho-escuro:#B23F3C; --vermelho-claro:#FDECEC;
+  --verde:#2E9B62; --verde-claro:#E7F6EE; --amarelo-claro:#FFF4DD;
+}
+html, body { height:100%; }
+body { font-family:'Inter',sans-serif; background:var(--cinza-fundo); color:var(--preto); display:flex; align-items:center; justify-content:center; padding:16px; }
+.cartao { width:100%; max-width:380px; background:var(--branco); border:1px solid var(--cinza-borda); border-radius:12px; box-shadow:0 6px 18px rgba(11,58,91,.10); padding:32px 28px; }
+.logo { display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:6px; }
+.logo svg { width:28px; height:28px; }
+.logo path { fill:var(--vermelho); transform-origin:20px 20px; animation:bater 1.8s ease-in-out infinite; }
+@keyframes bater { 0%,100%{transform:scale(1)} 12%{transform:scale(1.12)} 24%{transform:scale(1)} 36%{transform:scale(1.08)} 48%{transform:scale(1)} }
+.logo span { font-size:20px; font-weight:700; letter-spacing:-.3px; color:var(--marinho); }
+.sub { text-align:center; font-size:13px; color:var(--cinza-texto); margin-bottom:22px; }
+h2 { font-size:15px; font-weight:600; margin-bottom:6px; color:var(--marinho); }
+p.ajuda { font-size:13px; color:var(--cinza-texto); margin-bottom:16px; line-height:1.45; }
+label { display:block; font-size:12px; font-weight:600; color:var(--cinza-texto); margin-bottom:5px; }
+input { width:100%; padding:12px 14px; border:1.5px solid var(--cinza-borda); border-radius:10px; font-size:14px; font-family:inherit; margin-bottom:14px; color:var(--preto); background:var(--branco); }
+input:focus { outline:none; border-color:var(--azul); box-shadow:0 0 0 3px var(--azul-claro); }
+.campo-senha { position:relative; }
+.campo-senha input { padding-right:64px; }
+.ver { position:absolute; right:8px; top:6px; background:none; border:none; color:var(--azul); font-size:12px; font-weight:600; cursor:pointer; padding:8px; font-family:inherit; }
+button.principal { width:100%; padding:12px; border:none; border-radius:10px; background:var(--azul); color:#fff; font-size:14px; font-weight:600; font-family:inherit; cursor:pointer; }
+button.principal:hover { background:var(--azul-escuro); }
+button.principal:disabled { opacity:.6; cursor:default; }
+button.link { background:none; border:none; color:var(--cinza-texto); font-size:12px; margin-top:14px; cursor:pointer; width:100%; font-family:inherit; text-decoration:underline; }
+.msg { display:none; font-size:12.5px; padding:9px 12px; border-radius:8px; margin-bottom:14px; line-height:1.4; }
+.msg.erro { display:block; background:var(--vermelho-claro); color:var(--vermelho-escuro); }
+.msg.ok { display:block; background:var(--verde-claro); color:#1f6e45; }
+.tela { display:none; }
+.tela.ativa { display:block; }
+.usuario { background:var(--azul-claro); border-radius:10px; padding:14px; margin-bottom:16px; }
+.usuario b { display:block; font-size:15px; color:var(--marinho); }
+.usuario small { font-size:12px; color:var(--cinza-texto); }
+.rodape { text-align:center; font-size:11px; color:var(--cinza-texto); margin-top:20px; }
+</style>
+</head>
+<body>
+<main class="cartao">
+  <div class="logo">
+    <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 33.5 C20 33.5 6 24.8 6 15.6 C6 10.4 10 7 14.2 7 C17 7 19 8.6 20 10.6 C21 8.6 23 7 25.8 7 C30 7 34 10.4 34 15.6 C34 24.8 20 33.5 20 33.5 Z"/></svg>
+    <span>Cardiocenter</span>
+  </div>
+  <div class="sub">Painel de atendimento</div>
+
+  <!-- TELA 1: ENTRAR -->
+  <form class="tela" id="tela-login" autocomplete="on">
+    <div class="msg" id="msg-login"></div>
+    <label for="email">E-mail</label>
+    <input type="email" id="email" name="username" autocomplete="username" required autofocus>
+    <label for="senha">Senha</label>
+    <div class="campo-senha">
+      <input type="password" id="senha" name="password" autocomplete="current-password" required>
+      <button type="button" class="ver" data-alvo="senha">mostrar</button>
+    </div>
+    <button type="submit" class="principal" id="btn-login">Entrar</button>
+  </form>
+
+  <!-- TELA 2: TROCAR SENHA -->
+  <form class="tela" id="tela-troca" autocomplete="off">
+    <h2 id="troca-titulo">Crie sua senha</h2>
+    <p class="ajuda" id="troca-ajuda">Por segurança, escolha uma senha nova só sua (mínimo 8 caracteres). Ela não será mostrada a ninguém.</p>
+    <div class="msg" id="msg-troca"></div>
+    <label for="senha-atual">Senha atual (a que você acabou de usar)</label>
+    <div class="campo-senha">
+      <input type="password" id="senha-atual" autocomplete="current-password" required>
+      <button type="button" class="ver" data-alvo="senha-atual">mostrar</button>
+    </div>
+    <label for="senha-nova">Senha nova</label>
+    <div class="campo-senha">
+      <input type="password" id="senha-nova" autocomplete="new-password" required minlength="8">
+      <button type="button" class="ver" data-alvo="senha-nova">mostrar</button>
+    </div>
+    <label for="senha-nova2">Repita a senha nova</label>
+    <input type="password" id="senha-nova2" autocomplete="new-password" required minlength="8">
+    <button type="submit" class="principal" id="btn-troca">Salvar senha</button>
+    <button type="button" class="link" id="btn-cancelar-troca" style="display:none">Voltar</button>
+  </form>
+
+  <!-- TELA 3: SESSÃO ATIVA -->
+  <section class="tela" id="tela-ativa">
+    <div class="usuario"><b id="ativa-nome">—</b><small id="ativa-perfil">—</small></div>
+    <div class="msg ok" id="msg-ativa">Você está conectado.</div>
+    <button class="principal" id="btn-continuar">Abrir o painel</button>
+    <button class="link" id="btn-abrir-troca">Trocar minha senha</button>
+    <button class="link" id="btn-sair">Sair</button>
+  </section>
+
+  <div class="rodape">Acesso restrito à equipe autorizada.</div>
+</main>
+
+<script>
+/* ===== CONFIGURAÇÃO ===== */
+const API_AUTH = 'https://coldbloodedchameleon-n8n.cloudfy.live/webhook/api-auth';
+const CHAVE_SESSAO = 'cardiocenter_sessao_v2';   // { token, usuario:{id,nome,perfil,clinica_id} }
+const DESTINO_PAINEL = 'index.html';             // para onde "Abrir o painel" leva (relativo a /v2/)
+const ROTULO_PERFIL = { recepcao:'Recepção', master:'Master da clínica', dev:'Desenvolvedor' };
+
+/* ===== SESSÃO NO NAVEGADOR ===== */
+function lerSessao() { try { return JSON.parse(localStorage.getItem(CHAVE_SESSAO) || 'null'); } catch (e) { return null; } }
+function gravarSessao(s) { try { localStorage.setItem(CHAVE_SESSAO, JSON.stringify(s)); } catch (e) {} }
+function limparSessao() { try { localStorage.removeItem(CHAVE_SESSAO); } catch (e) {} }
+
+/* ===== CHAMADA À API ===== */
+async function api(corpo) {
+  try {
+    const res = await fetch(API_AUTH, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(corpo) });
+    return await res.json();
+  } catch (e) {
+    return { ok:false, erro:'rede' };
+  }
+}
+function textoErro(r) {
+  switch (r && r.erro) {
+    case 'credenciais': return 'E-mail ou senha incorretos.';
+    case 'bloqueado': return 'Muitas tentativas. Acesso bloqueado por ' + (r.minutos || 15) + ' minutos. Se precisar, peça ajuda à Gabriela.';
+    case 'senha_curta': return 'A senha nova precisa ter pelo menos 8 caracteres.';
+    case 'senha_igual': return 'A senha nova precisa ser diferente da atual.';
+    case 'senha_atual_incorreta': return 'A senha atual está incorreta.';
+    case 'nao_autorizado': return 'Sua sessão expirou. Entre novamente.';
+    case 'rede': return 'Não consegui conectar. Verifique a internet e tente de novo.';
+    default: return 'Algo deu errado. Tente novamente.';
+  }
+}
+
+/* ===== TELAS ===== */
+const $ = id => document.getElementById(id);
+function mostrar(nome) {
+  ['login','troca','ativa'].forEach(t => $('tela-' + t).classList.toggle('ativa', t === nome));
+  const foco = { login:'email', troca:'senha-atual', ativa:null }[nome];
+  if (foco) setTimeout(() => $(foco).focus(), 50);
+}
+function aviso(id, tipo, texto) { const el = $(id); el.className = 'msg ' + (texto ? tipo : ''); el.textContent = texto || ''; }
+
+function telaAtiva(s) {
+  $('ativa-nome').textContent = s.usuario.nome;
+  $('ativa-perfil').textContent = ROTULO_PERFIL[s.usuario.perfil] || s.usuario.perfil;
+  mostrar('ativa');
+}
+
+let _trocaObrigatoria = false;
+function abrirTroca(obrigatoria) {
+  _trocaObrigatoria = obrigatoria;
+  $('troca-titulo').textContent = obrigatoria ? 'Crie sua senha' : 'Trocar minha senha';
+  $('troca-ajuda').textContent = obrigatoria
+    ? 'Por segurança, escolha uma senha nova só sua (mínimo 8 caracteres). Ela não será mostrada a ninguém.'
+    : 'Escolha uma senha nova (mínimo 8 caracteres). As outras sessões abertas serão encerradas.';
+  $('btn-cancelar-troca').style.display = obrigatoria ? 'none' : 'block';
+  ['senha-atual','senha-nova','senha-nova2'].forEach(i => $(i).value = '');
+  aviso('msg-troca', 'erro', '');
+  mostrar('troca');
+}
+
+/* ===== EVENTOS ===== */
+document.querySelectorAll('.ver').forEach(b => b.addEventListener('click', () => {
+  const campo = $(b.dataset.alvo);
+  const mostrando = campo.type === 'text';
+  campo.type = mostrando ? 'password' : 'text';
+  b.textContent = mostrando ? 'mostrar' : 'ocultar';
+}));
+
+$('tela-login').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  aviso('msg-login', 'erro', '');
+  const btn = $('btn-login'); btn.disabled = true; btn.textContent = 'Entrando…';
+  const r = await api({ acao:'login', email:$('email').value.trim(), senha:$('senha').value });
+  btn.disabled = false; btn.textContent = 'Entrar';
+  if (!r.ok) { aviso('msg-login', 'erro', textoErro(r)); $('senha').value = ''; $('senha').focus(); return; }
+  const sessao = { token:r.token, usuario:r.usuario, trocar_senha:!!r.trocar_senha };
+  gravarSessao(sessao);
+  $('senha').value = '';
+  if (r.trocar_senha) { $('senha-atual').dataset.dica = '1'; abrirTroca(true); } else { telaAtiva(sessao); }
+});
+
+$('tela-troca').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  const s = lerSessao();
+  if (!s) { mostrar('login'); aviso('msg-login','erro', textoErro({erro:'nao_autorizado'})); return; }
+  const atual = $('senha-atual').value, nova = $('senha-nova').value, nova2 = $('senha-nova2').value;
+  if (nova.length < 8) return aviso('msg-troca','erro', textoErro({erro:'senha_curta'}));
+  if (nova !== nova2) return aviso('msg-troca','erro','As duas senhas novas não são iguais.');
+  const btn = $('btn-troca'); btn.disabled = true; btn.textContent = 'Salvando…';
+  const r = await api({ acao:'trocar_senha', token:s.token, senha_atual:atual, senha_nova:nova });
+  btn.disabled = false; btn.textContent = 'Salvar senha';
+  if (!r.ok) {
+    if (r.erro === 'nao_autorizado') { limparSessao(); mostrar('login'); aviso('msg-login','erro', textoErro(r)); return; }
+    return aviso('msg-troca','erro', textoErro(r));
+  }
+  s.trocar_senha = false; gravarSessao(s);
+  telaAtiva(s);
+  aviso('msg-ativa','ok','Senha alterada com sucesso.');
+});
+
+$('btn-cancelar-troca').addEventListener('click', () => { const s = lerSessao(); if (s) telaAtiva(s); });
+$('btn-abrir-troca').addEventListener('click', () => abrirTroca(false));
+$('btn-continuar').addEventListener('click', () => { window.location.href = DESTINO_PAINEL; });
+$('btn-sair').addEventListener('click', async () => {
+  const s = lerSessao(); limparSessao();
+  if (s) await api({ acao:'logout', token:s.token });
+  aviso('msg-login','ok','Você saiu.');
+  mostrar('login');
+});
+
+/* ===== AO ABRIR: já existe sessão válida? ===== */
+(async function iniciar() {
+  const s = lerSessao();
+  if (!s || !s.token) { mostrar('login'); return; }
+  const r = await api({ acao:'me', token:s.token });
+  if (r && r.ok && r.usuario) {
+    const sessao = { token:s.token, usuario:r.usuario, trocar_senha:!!r.trocar_senha };
+    gravarSessao(sessao);
+    if (sessao.trocar_senha) abrirTroca(true); else telaAtiva(sessao);
+  } else {
+    limparSessao(); mostrar('login');
+    if (r && r.erro === 'nao_autorizado') aviso('msg-login','erro', textoErro(r));
+  }
+})();
+</script>
+</body>
+</html>
