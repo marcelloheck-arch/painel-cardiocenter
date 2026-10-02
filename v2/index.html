@@ -2016,15 +2016,6 @@ window.addEventListener('DOMContentLoaded', function() {
 
 <div class="toast" id="cf-toast"></div>
 
-<div class="modal-overlay" id="cf-modalToken">
-  <div class="modal">
-    <div class="modal-titulo"><span class="icone-inline"><svg class="icone-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="9" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg></span> Código de acesso</div>
-    <div class="modal-sub">Digite o código de acesso para continuar.</div>
-    <input type="password" id="cf-tokenInput" placeholder="Código de acesso" onkeydown="if(event.key==='Enter')cfConfirmarToken()">
-    <button onclick="cfConfirmarToken()">Entrar</button>
-  </div>
-</div>
-
 <div class="modal-overlay" id="cf-modalRemover">
   <div class="modal">
     <div class="modal-titulo">Remover do painel?</div>
@@ -2038,21 +2029,15 @@ window.addEventListener('DOMContentLoaded', function() {
 
 <script>
 // IMPORTANTE: URL do webhook do Confirmador — ajustar para o endereço real de teste/produção
-const WEBHOOK_URL_CONF = 'https://coldbloodedchameleon-n8n.cloudfy.live/webhook/painel-confirmacoes-cardiocenter';
+const WEBHOOK_URL_CONF = 'https://coldbloodedchameleon-n8n.cloudfy.live/webhook/painel-confirmacoes-v2';
 
-// Chave de storage EXCLUSIVA deste painel — nunca reaproveitar a de outro
-// painel (lição aprendida em 20/ago: index.html e dashboard.html brigando
-// pela mesma chave derrubavam o login um do outro).
-const CHAVE_TOKEN_CONF = 'cardiocenter_token_acesso_confirmacoes';
-
-function cfObterToken() { return localStorage.getItem(CHAVE_TOKEN_CONF) || ''; }
-function cfMostrarTelaToken() { document.getElementById('cf-modalToken').classList.add('visivel'); }
-function cfConfirmarToken() {
-  const v = document.getElementById('cf-tokenInput').value.trim();
-  if (!v) return;
-  localStorage.setItem(CHAVE_TOKEN_CONF, v);
-  document.getElementById('cf-modalToken').classList.remove('visivel');
-  carregar();
+// Usa a mesma sessão do usuário logado (ver bloco SESSÃO DO USUÁRIO acima)
+function cfObterToken() { return obterToken(); }
+function cfMostrarTelaToken() { irParaLogin(); }
+// Só Master (Gabriela) e Desenvolvedor podem remover; o servidor também confere
+function cfPodeRemover() {
+  const s = lerSessao();
+  return !!(s && s.usuario && ['master', 'dev'].includes(s.usuario.perfil));
 }
 
 let idParaRemover = null;
@@ -2078,9 +2063,11 @@ async function cfExecutarRemocao() {
       body: JSON.stringify({ acao: 'remover', token: cfObterToken(), id: idParaRemover })
     });
     const data = await res.json();
-    if (data && data.erro === 'nao_autorizado') {
-      localStorage.removeItem(CHAVE_TOKEN_CONF);
-      cfMostrarTelaToken();
+    if (respostaNaoAutorizada(data)) return;
+    if (data && data.erro === 'sem_permissao') {
+      document.getElementById('cf-modalRemover').classList.remove('visivel');
+      idParaRemover = null;
+      cfMostrarToast('Só a Master da clínica pode remover do painel.', 'erro');
       return;
     }
     document.getElementById('cf-modalRemover').classList.remove('visivel');
@@ -2153,11 +2140,7 @@ async function carregar() {
       body: JSON.stringify({ acao: 'listar', token: cfObterToken(), dataInicio, dataFim, porEnvio })
     });
     const data = await res.json();
-    if (data && data.erro === 'nao_autorizado') {
-      localStorage.removeItem(CHAVE_TOKEN_CONF);
-      cfMostrarTelaToken();
-      return;
-    }
+    if (respostaNaoAutorizada(data)) return;
     todasConfirmacoes = data.confirmacoes || [];
     linhaAberta = null;
     renderizarContadores();
@@ -2226,11 +2209,7 @@ async function mostrarEnviadosHoje() {
       body: JSON.stringify({ acao: 'listar', token: cfObterToken(), dataInicio: null, dataFim: null, porEnvio: true })
     });
     const data = await res.json();
-    if (data && data.erro === 'nao_autorizado') {
-      localStorage.removeItem(CHAVE_TOKEN_CONF);
-      cfMostrarTelaToken();
-      return;
-    }
+    if (respostaNaoAutorizada(data)) return;
     todasConfirmacoes = data.confirmacoes || [];
     statusAtivo = 'todos';
     linhaAberta = null;
@@ -2319,9 +2298,9 @@ function cfRenderizarLista() {
           </div>
           <div class="linha-cabeca-meta">
             <span class="linha-data">Consulta: ${c.data || '—'}</span>
-            <button class="linha-btn-remover" title="Remover do painel" onclick="cfConfirmarRemocao('${idLinha}', '${(c.nome || 'Paciente').replace(/'/g, "\\'")}', event)">
+            ${cfPodeRemover() ? `<button class="linha-btn-remover" title="Remover do painel" onclick="cfConfirmarRemocao('${idLinha}', '${(c.nome || 'Paciente').replace(/'/g, "\\'")}', event)">
               <svg class="icone-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z"/></svg>
-            </button>
+            </button>` : ''}
             <span class="linha-seta">▶</span>
           </div>
         </div>
