@@ -1325,7 +1325,7 @@ function criarCardUrgente(a) {
         <div class="fila-urgente-nome">${nome}</div>
         <div class="fila-urgente-pergunta">"${pergunta}"</div>
       </div>
-      <button class="btn-responder-urgente" onclick="abrirChat(${a.id}, '${(a.telefone||'').replace(/'/g,"")}', '${nome.replace(/'/g,"")}', true)"><svg class="icone-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5h16a1 1 0 0 1 1 1V16a1 1 0 0 1-1 1H9l-4.5 4V17H4a1 1 0 0 1-1-1V6.5a1 1 0 0 1 1-1z"/></svg> Responder</button>
+      <button class="btn-responder-urgente" onclick="abrirChat(${a.id}, '${(a.telefone||'').replace(/['"\\`<>&\r\n]/g,"")}', '${nome.replace(/['"\\`<>&\r\n]/g,"")}', true)"><svg class="icone-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5h16a1 1 0 0 1 1 1V16a1 1 0 0 1-1 1H9l-4.5 4V17H4a1 1 0 0 1-1-1V6.5a1 1 0 0 1 1-1z"/></svg> Responder</button>
     </div>`;
 }
 
@@ -1396,8 +1396,8 @@ function criarCard(a) {
     : '';
 
   const mensagemJSON = JSON.stringify(montarMensagemConfirmacao(a)).replace(/"/g, '&quot;');
-  const nomeAttr = nome.replace(/'/g, "");
-  const telAttr = (a.telefone || '').replace(/'/g, "");
+  const nomeAttr = nome.replace(/['"\\`<>&\r\n]/g, "");
+  const telAttr = (a.telefone || '').replace(/['"\\`<>&\r\n]/g, "");
 
   let botoesHTML = '';
 
