@@ -1096,7 +1096,7 @@ body {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="16" rx="2.5"/><line x1="3.5" y1="9.5" x2="20.5" y2="9.5"/><line x1="8" y1="2.5" x2="8" y2="6.5"/><line x1="16" y1="2.5" x2="16" y2="6.5"/><line x1="7.5" y1="13.5" x2="10.5" y2="13.5"/><line x1="7.5" y1="17" x2="13.5" y2="17"/></svg>
         Agendamentos e Dúvidas
       </button>
-      <button class="app-nav-item" id="botaoAbaConfirmacoes" onclick="mudarAba('Confirmacoes')">
+      <button class="app-nav-item" id="botaoAbaConfirmacoes" style="display:none" onclick="mudarAba('Confirmacoes')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M8.5 12.3l2.3 2.3 4.7-5"/></svg>
         Confirmações
       </button>
@@ -2319,7 +2319,7 @@ window.addEventListener('DOMContentLoaded', function() {
 
 <script>
 // IMPORTANTE: URL do webhook do Confirmador — ajustar para o endereço real de teste/produção
-const WEBHOOK_URL_CONF = 'https://coldbloodedchameleon-n8n.cloudfy.live/webhook/painel-confirmacoes-cardiocenter';
+const WEBHOOK_URL_CONF = 'data:application/json,%7B%7D'; // TESTE: aba Confirmações desligada
 
 // Chave de storage EXCLUSIVA deste painel — nunca reaproveitar a de outro
 // painel (lição aprendida em 20/ago: index.html e dashboard.html brigando
@@ -2640,6 +2640,7 @@ window.addEventListener('DOMContentLoaded', function() {
 
 <script>
 function mudarAba(aba) {
+  aba = 'Agendamentos'; // TESTE
   document.getElementById('tabAgendamentos').classList.toggle('ativo', aba === 'Agendamentos');
   document.getElementById('tabConfirmacoes').classList.toggle('ativo', aba === 'Confirmacoes');
   document.getElementById('botaoAbaAgendamentos').classList.toggle('ativo', aba === 'Agendamentos');
