@@ -1513,7 +1513,7 @@ function criarCard(a) {
           <div class="campo-valor">${a.atendente || '—'}</div>
         </div>`;
 
-  const subInfo = tipo === 'novo' ? (a.servico || 'Serviço não informado') : (tipo === 'cancelamento' ? 'Cancelamento' : 'Remarcação');
+  const subInfo = tipo === 'novo' ? (a.servico || 'Serviço não informado') : (tipo === 'documento' ? 'Envio de documentos' : (tipo === 'cancelamento' ? 'Cancelamento' : 'Remarcação'));
   const aberta = filaAberta === a.id;
 
   return `
@@ -1681,6 +1681,10 @@ function montarMensagemConfirmacao(a) {
   const tipo = a.tipo_solicitacao || 'novo';
   const primeiroNome = a.nome ? a.nome.split(' ')[0] : '';
 
+  if (tipo === 'documento') {
+    return `Olá${primeiroNome ? ', ' + primeiroNome : ''}! Aqui é da Cardiocenter. Recebemos seu arquivo, obrigado!`;
+  }
+
   if (tipo === 'cancelamento') {
     let msg = `Olá${primeiroNome ? ', ' + primeiroNome : ''}! Aqui é da Cardiocenter.`;
     msg += `\n\nRecebemos seu pedido de cancelamento da consulta/exame do dia ${a.data_consulta_atual || '[data]'}.`;
@@ -1847,7 +1851,7 @@ async function abrirChat(id, telefone, nome, precisaAssumirPrimeiro) {
   // somente para cards de agendamento (novo/cancelamento/remarcacao) ainda não concluídos.
   const agendamentoChat = todosAgendamentos.find(x => x.id === id);
   const tipoChat = agendamentoChat ? (agendamentoChat.tipo_solicitacao || 'novo') : '';
-  if (agendamentoChat && tipoChat !== 'duvida_valor' && agendamentoChat.status !== 'concluido') {
+  if (agendamentoChat && tipoChat !== 'duvida_valor' && tipoChat !== 'documento' && agendamentoChat.status !== 'concluido') {
     document.getElementById('chatInput').value = montarMensagemConfirmacao(agendamentoChat);
   } else {
     document.getElementById('chatInput').value = '';
