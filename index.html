@@ -932,6 +932,10 @@ body {
     padding:4px 8px; margin-bottom:6px; font-size:12px; opacity:.85; }
   #tabAgendamentos .bolha-citacao-rotulo { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.3px; display:block; opacity:.8; }
   #tabAgendamentos .bolha-citacao-texto { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+  #tabAgendamentos .bolha-citacao { cursor:pointer; }
+  #tabAgendamentos .bolha-citacao:hover { background:rgba(0,0,0,.11); }
+  #tabAgendamentos .bolha-citacao.expandida .bolha-citacao-texto { display:block; -webkit-line-clamp:unset; overflow:visible; white-space:pre-wrap; }
+  #tabAgendamentos .bolha.destaque-citada { box-shadow:0 0 0 3px #F5B700; transition:box-shadow .3s; }
 
 @media (max-width: 900px) {
 #tabAgendamentos .layout { flex-direction: column; padding: 0 16px 24px; }#tabAgendamentos .sidebar-concluidos { width: 100%; margin-left: 0; margin-top: 20px; position: static; max-height: none; }#tabAgendamentos .modal-chat { width: 100%; height: 100%; max-height: 100%; border-radius: 0; }
@@ -1874,15 +1878,60 @@ function renderizarChat(mensagens) {
     return;
   }
 
+  _mensagensChat = mensagens;
   corpo.innerHTML = mensagens.map(m => {
     const remetente = m.remetente === 'paciente' ? 'paciente' : (m.remetente === 'agente' ? 'agente' : 'atendente');
     const hora = new Date(m.created_at).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-    const citacao = m.citacao ? `<div class="bolha-citacao"><span class="bolha-citacao-rotulo">↩ Respondendo a:</span><span class="bolha-citacao-texto" title="${escaparHtml(m.citacao)}">${escaparHtml(m.citacao)}</span></div>` : '';
-    return `<div class="bolha ${remetente}">${citacao}${escaparHtml(m.conteudo || '')}<span class="bolha-hora">${hora}</span></div>`;
+    const citacao = m.citacao ? `<div class="bolha-citacao${_citacoesExpandidas[m.id] ? ' expandida' : ''}" onclick="irParaMensagemCitada(${m.id}, this)" title="Clique para ir até a mensagem original"><span class="bolha-citacao-rotulo">↩ Respondendo a: <span style="font-weight:400;text-transform:none">(clique para ver)</span></span><span class="bolha-citacao-texto">${escaparHtml(m.citacao)}</span></div>` : '';
+    const destaque = (_destaqueCitada && _destaqueCitada.id === m.id && Date.now() < _destaqueCitada.ate) ? ' destaque-citada' : '';
+    return `<div class="bolha ${remetente}${destaque}" id="msg-chat-${m.id}">${citacao}${escaparHtml(m.conteudo || '')}<span class="bolha-hora">${hora}</span></div>`;
   }).join('');
 
   if (estavaNoFinal) {
     corpo.scrollTop = corpo.scrollHeight;
+  }
+}
+
+
+/* ---------- citação: clicar leva até a mensagem original ---------- */
+let _mensagensChat = [];
+let _destaqueCitada = null;
+const _citacoesExpandidas = {};
+
+function normalizaTextoChat(t) {
+  return String(t || '').replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
+function irParaMensagemCitada(idResposta, elemento) {
+  const lista = _mensagensChat || [];
+  const pos = lista.findIndex(x => x.id === idResposta);
+  const resposta = lista[pos];
+  if (!resposta || !resposta.citacao) return;
+  const alvo = normalizaTextoChat(resposta.citacao).replace(/…$/, '');
+  // escolhe a mensagem anterior que mais se parece com a citação (maior trecho inicial igual);
+  // em empate, a mais recente. Assim duas confirmações parecidas não se confundem.
+  let original = null, melhor = 0;
+  const minimo = Math.min(30, alvo.length);
+  for (let i = pos - 1; i >= 0 && alvo; i--) {
+    const c = normalizaTextoChat(lista[i].conteudo);
+    if (!c) continue;
+    let n = 0;
+    const lim = Math.min(c.length, alvo.length);
+    while (n < lim && c[n] === alvo[n]) n++;
+    if (n < minimo && c.includes(alvo.slice(0, 60))) n = minimo; // citação de um trecho do meio
+    if (n >= minimo && n > melhor) { melhor = n; original = lista[i]; }
+  }
+  const el = original && document.getElementById('msg-chat-' + original.id);
+  if (el) {
+    _destaqueCitada = { id: original.id, ate: Date.now() + 4000 };
+    el.classList.add('destaque-citada');
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(() => { const e2 = document.getElementById('msg-chat-' + original.id); if (e2) e2.classList.remove('destaque-citada'); }, 4000);
+  } else {
+    // mensagem original não está neste histórico: mostra a citação inteira
+    _citacoesExpandidas[idResposta] = !_citacoesExpandidas[idResposta];
+    if (elemento) elemento.classList.toggle('expandida', !!_citacoesExpandidas[idResposta]);
+    if (_citacoesExpandidas[idResposta]) mostrarToast('Mensagem original não está no histórico do chat. Mostrando a citação completa.', 'aviso');
   }
 }
 
