@@ -928,6 +928,10 @@ body {
 
   
 
+  #tabAgendamentos .bolha-citacao { white-space:normal; border-left:3px solid currentColor; background:rgba(0,0,0,.06); border-radius:6px;
+    padding:4px 8px; margin-bottom:6px; font-size:12px; opacity:.85; }
+  #tabAgendamentos .bolha-citacao-texto { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+  #tabAgendamentos .bolha-citacao-rotulo { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.3px; display:block; opacity:.8; }
   #tabAgendamentos .bolha-arquivo { white-space:normal; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
   #tabAgendamentos .bolha-arquivo-nome { font-weight:600; word-break:break-all; }
   #tabAgendamentos .bolha-arquivo-acoes { white-space:normal; display:flex; gap:6px; margin-top:6px; }
@@ -1908,10 +1912,11 @@ function renderizarChat(mensagens) {
     const remetente = m.remetente === 'paciente' ? 'paciente' : (m.remetente === 'agente' ? 'agente' : 'atendente');
     const hora = new Date(m.created_at).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
     const midia = lerMidia(m.midia);
+    const citacao = m.citacao ? `<div class="bolha-citacao"><span class="bolha-citacao-rotulo">↩ Respondendo a:</span><span class="bolha-citacao-texto" title="${escaparHtml(m.citacao)}">${escaparHtml(m.citacao)}</span></div>` : '';
     if (midia && midia.raw) {
-      return `<div class="bolha ${remetente}">${htmlBolhaArquivo(m, midia)}<span class="bolha-hora">${hora}</span></div>`;
+      return `<div class="bolha ${remetente}">${citacao}${htmlBolhaArquivo(m, midia)}<span class="bolha-hora">${hora}</span></div>`;
     }
-    return `<div class="bolha ${remetente}">${escaparHtml(m.conteudo || '')}<span class="bolha-hora">${hora}</span></div>`;
+    return `<div class="bolha ${remetente}">${citacao}${escaparHtml(m.conteudo || '')}<span class="bolha-hora">${hora}</span></div>`;
   }).join('');
 
   if (estavaNoFinal) {
