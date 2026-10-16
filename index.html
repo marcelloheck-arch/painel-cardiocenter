@@ -927,6 +927,12 @@ body {
   }
 
   
+
+  #tabAgendamentos .bolha-citacao { white-space:normal; border-left:3px solid currentColor; background:rgba(0,0,0,.06); border-radius:6px;
+    padding:4px 8px; margin-bottom:6px; font-size:12px; opacity:.85; }
+  #tabAgendamentos .bolha-citacao-rotulo { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.3px; display:block; opacity:.8; }
+  #tabAgendamentos .bolha-citacao-texto { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+
 @media (max-width: 900px) {
 #tabAgendamentos .layout { flex-direction: column; padding: 0 16px 24px; }#tabAgendamentos .sidebar-concluidos { width: 100%; margin-left: 0; margin-top: 20px; position: static; max-height: none; }#tabAgendamentos .modal-chat { width: 100%; height: 100%; max-height: 100%; border-radius: 0; }
   
@@ -1871,7 +1877,8 @@ function renderizarChat(mensagens) {
   corpo.innerHTML = mensagens.map(m => {
     const remetente = m.remetente === 'paciente' ? 'paciente' : (m.remetente === 'agente' ? 'agente' : 'atendente');
     const hora = new Date(m.created_at).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-    return `<div class="bolha ${remetente}">${escaparHtml(m.conteudo || '')}<span class="bolha-hora">${hora}</span></div>`;
+    const citacao = m.citacao ? `<div class="bolha-citacao"><span class="bolha-citacao-rotulo">↩ Respondendo a:</span><span class="bolha-citacao-texto" title="${escaparHtml(m.citacao)}">${escaparHtml(m.citacao)}</span></div>` : '';
+    return `<div class="bolha ${remetente}">${citacao}${escaparHtml(m.conteudo || '')}<span class="bolha-hora">${hora}</span></div>`;
   }).join('');
 
   if (estavaNoFinal) {
