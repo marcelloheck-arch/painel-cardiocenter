@@ -1202,8 +1202,10 @@ body {
 <div class="toast" id="toast"></div>
 
 <script>
-const WEBHOOK_URL = 'https://coldbloodedchameleon-n8n.cloudfy.live/webhook/painel-agendamentos-v2';
-const API_AUTH = 'https://coldbloodedchameleon-n8n.cloudfy.live/webhook/api-auth';
+// Endereço fixo (Cloudflare Worker). Na emergência o Worker passa a apontar para a VPS; o painel não muda.
+const API_BASE = 'https://api.cardiocenterclinica.net';
+const WEBHOOK_URL = API_BASE + '/webhook/painel-agendamentos-v2';
+const API_AUTH = API_BASE + '/webhook/api-auth';
 
 /* ============================================================
    SESSÃO DO USUÁRIO (login individual — ver login.html)
@@ -2029,7 +2031,7 @@ window.addEventListener('DOMContentLoaded', function() {
 
 <script>
 // IMPORTANTE: URL do webhook do Confirmador — ajustar para o endereço real de teste/produção
-const WEBHOOK_URL_CONF = 'https://coldbloodedchameleon-n8n.cloudfy.live/webhook/painel-confirmacoes-v2';
+const WEBHOOK_URL_CONF = API_BASE + '/webhook/painel-confirmacoes-v2';
 
 // Usa a mesma sessão do usuário logado (ver bloco SESSÃO DO USUÁRIO acima)
 function cfObterToken() { return obterToken(); }

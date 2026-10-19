@@ -102,7 +102,8 @@ button.link { background:none; border:none; color:var(--cinza-texto); font-size:
 
 <script>
 /* ===== CONFIGURAÇÃO ===== */
-const API_AUTH = 'https://coldbloodedchameleon-n8n.cloudfy.live/webhook/api-auth';
+const API_BASE = 'https://api.cardiocenterclinica.net';   // Worker da Cloudflare (aponta para a Cloudfy ou, em emergência, para a VPS)
+const API_AUTH = API_BASE + '/webhook/api-auth';
 const CHAVE_SESSAO = 'cardiocenter_sessao_v2';   // { token, usuario:{id,nome,perfil,clinica_id} }
 const DESTINO_PAINEL = 'index.html';             // para onde "Abrir o painel" leva (relativo a /v2/)
 const ROTULO_PERFIL = { recepcao:'Recepção', master:'Master da clínica', dev:'Desenvolvedor' };
