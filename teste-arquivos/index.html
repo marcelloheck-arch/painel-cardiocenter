@@ -1218,7 +1218,8 @@ body {
 
 <script>
 const WEBHOOK_URL = 'https://coldbloodedchameleon-n8n.cloudfy.live/webhook/painel-agendamentos';
-const ARQ_URL = 'https://coldbloodedchameleon-n8n.cloudfy.live/webhook/painel-arquivos';
+// 06/11: arquivos pela Uazapi (download pelo messageid). A versão Evolution era /webhook/painel-arquivos
+const ARQ_URL = 'https://coldbloodedchameleon-n8n.cloudfy.live/webhook/painel-arquivos-uazapi';
 const ARQ_LIMITE_MB = 10;
 // PÁGINA DE TESTE: envios saem pela instância de teste e só aparecem os cards do telefone de teste
 const ARQ_INSTANCIA = 'CARDIOCENTER-TESTE-PESSOAL';
@@ -1908,7 +1909,7 @@ function renderizarChat(mensagens) {
     const remetente = m.remetente === 'paciente' ? 'paciente' : (m.remetente === 'agente' ? 'agente' : 'atendente');
     const hora = new Date(m.created_at).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
     const midia = lerMidia(m.midia);
-    if (midia && midia.raw) {
+    if (midia && (midia.raw || midia.messageid)) {
       return `<div class="bolha ${remetente}">${htmlBolhaArquivo(m, midia)}<span class="bolha-hora">${hora}</span></div>`;
     }
     return `<div class="bolha ${remetente}">${escaparHtml(m.conteudo || '')}<span class="bolha-hora">${hora}</span></div>`;
@@ -1994,11 +1995,13 @@ function htmlBolhaArquivo(m, midia) {
   const legenda = midia.legenda ? `<div>${escaparHtml(midia.legenda)}</div>` : '';
   const quem = (m.remetente === 'atendente' && m.conteudo && m.conteudo.indexOf('\n— ') > -1)
     ? `<div style="font-size:11px;opacity:.75">${escaparHtml(m.conteudo.split('\n— ').pop())}</div>` : '';
-  const rotuloAbrir = midia.tipo === 'audio' ? 'Ouvir' : 'Abrir';
+  const ehAudio = midia.tipo === 'audio';
+  const rotuloAbrir = ehAudio ? 'Ouvir' : 'Abrir';
   return `<div class="bolha-arquivo"><span>${iconeMidia(midia)}</span><span class="bolha-arquivo-nome">${escaparHtml(nomeMidia(midia))}</span></div>`
     + legenda + quem
-    + `<div class="bolha-arquivo-acoes"><button class="btn-arquivo" onclick="abrirArquivo(${m.id}, false, this)">${rotuloAbrir}</button>`
-    + `<button class="btn-arquivo" onclick="abrirArquivo(${m.id}, true, this)">Baixar</button></div>`;
+    + `<div class="bolha-arquivo-acoes"><button class="btn-arquivo" onclick="abrirArquivo(${m.id}, 'abrir', this)">${rotuloAbrir}</button>`
+    + (ehAudio ? '' : `<button class="btn-arquivo" onclick="abrirArquivo(${m.id}, 'imprimir', this)">Imprimir</button>`)
+    + `<button class="btn-arquivo" onclick="abrirArquivo(${m.id}, 'baixar', this)">Baixar</button></div>`;
 }
 
 function base64ParaBlob(b64, tipo) {
@@ -2008,29 +2011,64 @@ function base64ParaBlob(b64, tipo) {
   return new Blob([bytes], { type: tipo || 'application/octet-stream' });
 }
 
-async function abrirArquivo(id, baixar, botao) {
+async function buscarArquivo(id) {
+  if (_cacheArquivos[id]) return _cacheArquivos[id];
+  const res = await fetch(ARQ_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ acao: 'abrir_midia', id, token: obterToken() })
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.mensagem || 'Arquivo indisponível');
+  let arq;
+  if (data.base64) {
+    const blob = base64ParaBlob(data.base64, data.mimetype);
+    arq = { url: URL.createObjectURL(blob), nome: data.fileName || 'arquivo', tipo: data.mimetype, local: true };
+  } else {
+    arq = { url: data.url, nome: data.fileName || 'arquivo', tipo: data.mimetype, local: false };
+  }
+  _cacheArquivos[id] = arq;
+  return arq;
+}
+
+// Imprime sem sair do painel: carrega o arquivo num quadro invisível e chama a impressão.
+function imprimirArquivoLocal(arq) {
+  const tipo = arq.tipo || '';
+  const quadro = document.createElement('iframe');
+  quadro.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+  document.body.appendChild(quadro);
+  const imprimir = () => {
+    try { quadro.contentWindow.focus(); quadro.contentWindow.print(); }
+    catch (e) { window.open(arq.url, '_blank'); }
+    setTimeout(() => quadro.remove(), 60000);
+  };
+  if (tipo.startsWith('image/')) {
+    quadro.onload = () => {
+      const img = quadro.contentDocument.querySelector('img');
+      if (img && !img.complete) img.onload = imprimir; else imprimir();
+    };
+    quadro.srcdoc = `<!doctype html><html><head><style>@page{margin:10mm}body{margin:0}img{max-width:100%;max-height:100vh;display:block;margin:0 auto}</style></head><body><img src="${arq.url}"></body></html>`;
+  } else {
+    quadro.onload = () => setTimeout(imprimir, 400); // PDF: dá tempo do leitor do navegador carregar
+    quadro.src = arq.url;
+  }
+}
+
+// modo: 'abrir' (nova aba), 'imprimir' (abre a impressão direto) ou 'baixar'
+async function abrirArquivo(id, modo, botao) {
   // a janela é aberta antes da busca para o navegador não bloquear o pop-up
-  const janela = baixar ? null : window.open('', '_blank');
+  const janela = modo === 'abrir' ? window.open('', '_blank') : null;
   if (janela) janela.document.write('<p style="font:14px system-ui;padding:20px">Carregando arquivo...</p>');
   if (botao) botao.disabled = true;
   try {
-    let arq = _cacheArquivos[id];
-    if (!arq) {
-      const res = await fetch(ARQ_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ acao: 'abrir_midia', id, token: obterToken() })
-      });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.mensagem || 'Arquivo indisponível');
-      const blob = base64ParaBlob(data.base64, data.mimetype);
-      arq = { url: URL.createObjectURL(blob), nome: data.fileName || 'arquivo', tipo: data.mimetype };
-      _cacheArquivos[id] = arq;
-    }
-    if (baixar) {
+    const arq = await buscarArquivo(id);
+    if (modo === 'baixar') {
       const a = document.createElement('a');
-      a.href = arq.url; a.download = arq.nome;
+      a.href = arq.url; a.download = arq.nome; a.target = '_blank';
       document.body.appendChild(a); a.click(); a.remove();
+    } else if (modo === 'imprimir') {
+      if (arq.local) imprimirArquivoLocal(arq);
+      else window.open(arq.url, '_blank'); // sem cópia local: abre o arquivo e a impressão é pelo leitor
     } else if (janela) {
       const tipo = arq.tipo || '';
       const titulo = escaparHtml(arq.nome);
