@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- DASHBOARD-VERSAO: 2026-07-06-fix-decimais -->
+<!-- DASHBOARD-VERSAO: 2026-11-09-visual-painel (cores do painel de agendamentos e lembretes) -->
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -11,473 +11,302 @@
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* Mesma paleta do painel de Agendamentos / Confirmações (v2) */
 :root {
-  --vermelho: #DC2626;
-  --vermelho-escuro: #B91C1C;
-  --vermelho-suave: #FEE2E2;
-  --preto: #F5F7FA;          /* fundo da página (tema claro) */
-  --cinza-escuro: #FFFFFF;   /* cards e header */
-  --cinza-medio: #EEF1F4;    /* inputs e caixas internas */
-  --cinza-borda: #E2E8F0;
-  --cinza-texto: #64748B;
-  --branco: #172033;         /* texto principal (escuro) */
-  --branco-suave: #F0F4F8;
-  --verde: #16A34A;
-  --verde-suave: rgba(22,163,74,0.12);
-  --azul: #2563EB;
-  --azul-escuro: #1E3A5F;
-  --azul-suave: rgba(37,99,235,0.12);
-  --amarelo: #F59E0B;
-  --amarelo-suave: rgba(245,158,11,0.12);
-  --roxo: #7C3AED;
-  --roxo-suave: rgba(124,58,237,0.12);
-  --laranja: #EA580C;
-  --laranja-suave: rgba(234,88,12,0.12);
+  --marinho: #0B3A5B;
+  --azul: #1769AA;
+  --azul-claro: #EAF4FA;
+  --azul-escuro: #0B3A5B;
+  --branco: #FFFFFF;
+  --fundo: #F4F6F8;
+  --borda: #E4E9EF;
+  --texto: #1B2733;
+  --texto-suave: #5F6B76;
+  --verde: #2E9B62;
+  --verde-claro: #E7F6EE;
+  --amarelo: #E9A227;
+  --amarelo-claro: #FFF4DD;
+  --vermelho: #D9524F;
+  --vermelho-escuro: #B23F3C;
+  --vermelho-claro: #FDECEC;
+  --roxo: #7657C8;
+  --roxo-claro: #F0EBFF;
+  --sombra-1: 0 1px 2px rgba(11,58,91,0.05);
+  --sombra-2: 0 2px 6px rgba(11,58,91,0.08);
+  --sombra-3: 0 6px 18px rgba(11,58,91,0.10);
+  --raio: 12px;
 }
 
 body {
   font-family: 'Inter', sans-serif;
-  background: var(--preto);
-  color: var(--branco);
+  background: var(--fundo);
+  color: var(--texto);
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
 }
+.num { font-variant-numeric: tabular-nums; }
+svg.ic { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
 
-/* HEADER */
-header {
-  background: var(--cinza-escuro);
-  border-bottom: 1px solid var(--cinza-borda);
+/* ===== TOPO (faixa marinho, como a barra lateral do painel) ===== */
+.topo {
+  background: var(--marinho);
+  color: var(--branco);
   padding: 0 32px;
-  height: 68px;
+  height: 64px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   position: sticky;
   top: 0;
   z-index: 100;
+  box-shadow: 0 2px 10px rgba(11,58,91,0.18);
 }
-
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.marca { display: flex; align-items: center; gap: 12px; }
+.marca-icone {
+  width: 38px; height: 38px; border-radius: 10px;
+  background: rgba(255,255,255,0.10);
+  display: flex; align-items: center; justify-content: center;
 }
-
-.logo-icone {
-  width: 38px;
-  height: 38px;
-  background: var(--vermelho);
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-}
-
-.logo-nome { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
-.logo-sub { font-size: 11px; color: var(--cinza-texto); margin-top: 1px; }
-
-/* FILTRO DE PERÍODO */
-.filtro-bar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 20px 32px;
-  background: var(--cinza-escuro);
-  border-bottom: 1px solid var(--cinza-borda);
-}
-
-.filtro-label { font-size: 12px; color: var(--cinza-texto); font-weight: 500; }
-
-.filtro-grupo { display: flex; gap: 6px; }
-
-.filtro-btn {
-  padding: 7px 16px;
+.coracao { width: 24px; height: 24px; }
+.coracao path { fill: var(--vermelho); transform-origin: 20px 20px; animation: bater 1.8s ease-in-out infinite; }
+@keyframes bater { 0%,100% { transform: scale(1); } 18% { transform: scale(1.09); } 32% { transform: scale(0.98); } 46% { transform: scale(1); } }
+.marca-nome { font-size: 16px; font-weight: 700; letter-spacing: -0.2px; }
+.marca-nome span { font-weight: 400; color: rgba(255,255,255,0.6); }
+.marca-sub { font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 2px; }
+.topo-direita { display: flex; align-items: center; gap: 12px; }
+.periodo-tag {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: rgba(255,255,255,0.10);
+  border: 1px solid rgba(255,255,255,0.18);
   border-radius: 20px;
-  border: 1px solid var(--cinza-borda);
-  background: transparent;
-  color: var(--cinza-texto);
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s;
-  font-family: 'Inter', sans-serif;
-}
-
-.filtro-btn:hover { border-color: var(--azul); color: var(--branco); }
-.filtro-btn.ativo { background: var(--azul); border-color: var(--azul); color: white; }
-
-.filtro-datas {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-left: auto;
-}
-
-.filtro-datas input {
-  background: var(--cinza-medio);
-  border: 1px solid var(--cinza-borda);
-  border-radius: 8px;
+  padding: 5px 12px;
+  font-size: 12px; font-weight: 500;
   color: var(--branco);
-  padding: 7px 12px;
-  font-size: 12px;
-  font-family: 'Inter', sans-serif;
-  outline: none;
 }
+.periodo-tag svg.ic { width: 14px; height: 14px; opacity: 0.8; }
+.ao-vivo { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: rgba(255,255,255,0.75); }
+.ao-vivo i { width: 7px; height: 7px; border-radius: 50%; background: #5FD39A; animation: pulsar 2s infinite; }
+@keyframes pulsar { 0% { box-shadow: 0 0 0 0 rgba(95,211,154,0.6); } 70% { box-shadow: 0 0 0 7px rgba(95,211,154,0); } 100% { box-shadow: 0 0 0 0 rgba(95,211,154,0); } }
+.btn-sair {
+  background: transparent; border: 1px solid rgba(255,255,255,0.25);
+  color: rgba(255,255,255,0.85); font-size: 12px; font-weight: 500;
+  padding: 6px 14px; border-radius: 8px; cursor: pointer; font-family: inherit;
+  transition: background 0.15s, color 0.15s;
+}
+.btn-sair:hover { background: rgba(255,255,255,0.12); color: var(--branco); }
 
-.filtro-datas input:focus { border-color: var(--azul); }
-
-.btn-buscar {
-  background: var(--azul);
-  border: none;
-  border-radius: 8px;
-  color: white;
-  padding: 8px 18px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: 'Inter', sans-serif;
+/* ===== FILTROS ===== */
+.filtros {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 14px 32px;
+  background: var(--branco);
+  border-bottom: 1px solid var(--borda);
+}
+.filtro-label { font-size: 12px; color: var(--texto-suave); font-weight: 500; }
+.segmentado { display: inline-flex; background: var(--fundo); border: 1px solid var(--borda); border-radius: 10px; padding: 3px; gap: 2px; }
+.filtro-btn {
+  padding: 6px 14px; border-radius: 7px; border: none; background: transparent;
+  color: var(--texto-suave); font-size: 12.5px; font-weight: 500; cursor: pointer;
+  font-family: inherit; transition: all 0.15s;
+}
+.filtro-btn:hover { color: var(--texto); }
+.filtro-btn.ativo { background: var(--branco); color: var(--azul); font-weight: 600; box-shadow: var(--sombra-2); }
+.filtro-datas { display: flex; align-items: center; gap: 8px; margin-left: auto; flex-wrap: wrap; }
+.filtro-datas input {
+  background: var(--branco); border: 1px solid var(--borda); border-radius: 8px;
+  color: var(--texto); padding: 7px 10px; font-size: 12.5px; font-family: inherit; outline: none;
+}
+.filtro-datas input:focus { border-color: var(--azul); box-shadow: 0 0 0 3px var(--azul-claro); }
+.btn-aplicar {
+  background: var(--azul); border: none; border-radius: 8px; color: var(--branco);
+  padding: 8px 18px; font-size: 12.5px; font-weight: 600; cursor: pointer; font-family: inherit;
   transition: background 0.15s;
 }
+.btn-aplicar:hover { background: var(--marinho); }
 
-.btn-buscar:hover { background: var(--azul-escuro); }
-
-/* CONTEÚDO */
-.conteudo { padding: 24px 32px 48px; }
-
-/* TÍTULO DA SEÇÃO */
-.secao-titulo {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--cinza-texto);
-  margin-bottom: 14px;
-  margin-top: 28px;
+/* ===== CONTEÚDO ===== */
+.conteudo { padding: 8px 32px 48px; max-width: 1440px; margin: 0 auto; }
+.secao { display: flex; align-items: baseline; gap: 10px; margin: 28px 0 12px; }
+.secao h2 { font-size: 13px; font-weight: 700; color: var(--texto); letter-spacing: -0.1px; }
+.secao p { font-size: 12px; color: var(--texto-suave); }
+.card {
+  background: var(--branco);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  box-shadow: var(--sombra-1);
 }
 
-/* KPI CARDS — LINHA PRINCIPAL */
-.kpis {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 14px;
-  margin-bottom: 4px;
-}
+/* KPIs */
+.kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+.kpi { padding: 18px 18px 16px; position: relative; overflow: hidden; }
+.kpi-topo { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.kpi-label { font-size: 12.5px; font-weight: 600; color: var(--texto-suave); }
+.kpi-icone { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; }
+.kpi-valor { font-size: 30px; font-weight: 800; line-height: 1; letter-spacing: -0.8px; color: var(--texto); }
+.kpi-detalhe { font-size: 11.5px; color: var(--texto-suave); margin-top: 8px; }
+.kpi::after { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; }
+.kpi.verde .kpi-icone { background: var(--verde-claro); color: var(--verde); }   .kpi.verde::after { background: var(--verde); }
+.kpi.azul .kpi-icone { background: var(--azul-claro); color: var(--azul); }      .kpi.azul::after { background: var(--azul); }
+.kpi.amarelo .kpi-icone { background: var(--amarelo-claro); color: #B87A10; }   .kpi.amarelo::after { background: var(--amarelo); }
+.kpi.roxo .kpi-icone { background: var(--roxo-claro); color: var(--roxo); }      .kpi.roxo::after { background: var(--roxo); }
+.kpi.vermelho .kpi-icone { background: var(--vermelho-claro); color: var(--vermelho); } .kpi.vermelho::after { background: var(--vermelho); }
 
-.kpi {
-  background: var(--cinza-escuro);
-  border: 1px solid var(--cinza-borda);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  border-radius: 14px;
-  padding: 20px;
-  position: relative;
-  overflow: hidden;
-}
+/* SLA */
+.sla { display: grid; grid-template-columns: repeat(3, 1fr); }
+.sla-item { padding: 18px 20px; display: flex; align-items: center; gap: 14px; }
+.sla-item + .sla-item { border-left: 1px solid var(--borda); }
+.sla-ponto { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.sla-valor { font-size: 22px; font-weight: 700; letter-spacing: -0.4px; }
+.sla-label { font-size: 12px; color: var(--texto-suave); margin-top: 3px; }
 
-.kpi::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 3px;
-}
+/* FILA */
+.fila-colunas { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.fila-card { padding: 16px 18px; border-top: 3px solid var(--amarelo); }
+.fila-card.atendimento { border-top-color: var(--azul); }
+.fila-titulo { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.fila-titulo strong { font-size: 12px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--texto); display: flex; align-items: center; gap: 8px; }
+.fila-titulo strong i { width: 8px; height: 8px; border-radius: 50%; background: var(--amarelo); }
+.fila-card.atendimento .fila-titulo strong i { background: var(--azul); }
+.fila-contador { font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 20px; background: var(--amarelo-claro); color: #9A6608; }
+.fila-card.atendimento .fila-contador { background: var(--azul-claro); color: var(--azul); }
+.fila-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--borda); }
+.fila-item:last-child { border-bottom: none; }
+.avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--azul-claro); color: var(--azul); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.fila-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.fila-nome { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fila-tipo { font-size: 11.5px; color: var(--texto-suave); }
+.fila-tempo { font-size: 12px; font-weight: 600; white-space: nowrap; padding: 3px 9px; border-radius: 20px; }
+.fila-vazia { color: var(--texto-suave); font-size: 12.5px; padding: 18px 0 10px; text-align: center; }
 
-.kpi.verde::before { background: var(--verde); }
-.kpi.azul::before { background: var(--azul); }
-.kpi.amarelo::before { background: var(--amarelo); }
-.kpi.roxo::before { background: var(--roxo); }
-.kpi.laranja::before { background: var(--laranja); }
+/* GRÁFICOS */
+.graficos { display: grid; grid-template-columns: 1.25fr 1fr; gap: 14px; }
+.grafico-card { padding: 18px 20px; }
+.grafico-titulo { font-size: 13.5px; font-weight: 700; }
+.grafico-sub { font-size: 12px; color: var(--texto-suave); margin: 3px 0 16px; }
+.grafico-area { position: relative; height: 240px; }
 
-.kpi-icone {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  margin-bottom: 14px;
-}
+/* RANKING */
+.ranking { display: flex; flex-direction: column; gap: 12px; }
+.ranking-item { display: grid; grid-template-columns: 24px minmax(110px, 1.1fr) 3fr 44px 48px; align-items: center; gap: 12px; }
+.ranking-pos { font-size: 12px; font-weight: 700; color: var(--texto-suave); text-align: center; }
+.ranking-pos.top { color: var(--branco); background: var(--azul); border-radius: 6px; height: 22px; line-height: 22px; }
+.ranking-nome { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ranking-trilho { background: var(--fundo); border-radius: 6px; height: 8px; overflow: hidden; }
+.ranking-barra { height: 100%; border-radius: 6px; transition: width 0.6s ease; }
+.ranking-total { font-size: 13px; font-weight: 700; text-align: right; }
+.ranking-pct { font-size: 12px; color: var(--texto-suave); text-align: right; }
 
-.kpi.verde .kpi-icone { background: var(--verde-suave); }
-.kpi.azul .kpi-icone { background: var(--azul-suave); }
-.kpi.amarelo .kpi-icone { background: var(--amarelo-suave); }
-.kpi.roxo .kpi-icone { background: var(--roxo-suave); }
-.kpi.laranja .kpi-icone { background: var(--laranja-suave); }
-
-.kpi-valor {
-  font-size: 32px;
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: -1px;
-}
-
-.kpi-label {
-  font-size: 12px;
-  color: var(--cinza-texto);
-  margin-top: 6px;
-  font-weight: 500;
-}
-
-.kpi-detalhe {
-  font-size: 11px;
-  color: var(--cinza-texto);
-  margin-top: 4px;
-}
-
-/* LINHA DE GRÁFICOS */
-.graficos-linha {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-}
-
-.grafico-card {
-  background: var(--cinza-escuro);
-  border: 1px solid var(--cinza-borda);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  border-radius: 14px;
-  padding: 20px;
-}
-
-.grafico-titulo {
-  font-size: 13px;
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-
-.grafico-sub {
-  font-size: 11px;
-  color: var(--cinza-texto);
-  margin-bottom: 18px;
-}
-
-.grafico-container { position: relative; height: 220px; }
-
-/* RANKING INLINE */
-.ranking-lista { display: flex; flex-direction: column; gap: 10px; }
-
-.ranking-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.ranking-pos {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--cinza-texto);
-  width: 20px;
-  text-align: center;
-  flex-shrink: 0;
-}
-
-.ranking-pos.top { color: var(--amarelo); }
-
-.ranking-cor {
-  width: 10px;
-  height: 10px;
-  border-radius: 3px;
-  flex-shrink: 0;
-}
-
-.ranking-nome {
-  font-size: 13px;
-  font-weight: 500;
-  flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.ranking-barra-wrap {
-  flex: 2;
-  background: var(--cinza-medio);
-  border-radius: 4px;
-  height: 6px;
-  overflow: hidden;
-}
-
-.ranking-barra {
-  height: 100%;
-  border-radius: 4px;
-  transition: width 0.6s ease;
-}
-
-.ranking-total {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--branco);
-  width: 28px;
-  text-align: right;
-  flex-shrink: 0;
-}
-
-.ranking-pct {
-  font-size: 11px;
-  color: var(--cinza-texto);
-  width: 36px;
-  text-align: right;
-  flex-shrink: 0;
-}
-
-/* SLA CARDS */
-.sla-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-}
-
-.sla-item {
-  background: var(--cinza-medio);
-  border-radius: 10px;
-  padding: 16px;
-  text-align: center;
-}
-
-.sla-valor { font-size: 24px; font-weight: 700; }
-.sla-label { font-size: 11px; color: var(--cinza-texto); margin-top: 4px; }
-
-/* ESTADO VAZIO */
-.estado-vazio {
-  text-align: center;
-  padding: 80px 20px;
-  color: var(--cinza-texto);
-}
-
-.estado-vazio .icone { font-size: 48px; margin-bottom: 16px; }
-.estado-vazio .titulo { font-size: 16px; font-weight: 600; color: var(--branco); }
+/* ESTADOS */
+.estado-vazio { text-align: center; padding: 90px 20px; color: var(--texto-suave); }
+.estado-vazio .icone { width: 56px; height: 56px; border-radius: 14px; background: var(--azul-claro); color: var(--azul); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px; }
+.estado-vazio .icone svg.ic { width: 26px; height: 26px; }
+.estado-vazio .icone.erro { background: var(--vermelho-claro); color: var(--vermelho); }
+.estado-vazio .titulo { font-size: 16px; font-weight: 600; color: var(--texto); }
 .estado-vazio .sub { font-size: 13px; margin-top: 6px; }
 
-/* CARREGANDO */
-.carregando-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(244,246,248,0.8);
-  z-index: 200;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  gap: 16px;
+.carregando { display: none; position: fixed; top: 64px; left: 0; right: 0; height: 3px; z-index: 150; overflow: hidden; background: var(--azul-claro); }
+.carregando.visivel { display: block; }
+.carregando::before { content: ''; position: absolute; top: 0; bottom: 0; width: 35%; background: var(--azul); animation: barra 1s ease-in-out infinite; }
+@keyframes barra { 0% { left: -35%; } 100% { left: 100%; } }
+.atualizado { font-size: 11.5px; color: var(--texto-suave); text-align: right; margin-top: 18px; }
+
+/* RESPONSIVO */
+@media (max-width: 1200px) { .kpis { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 900px) {
+  .graficos, .fila-colunas { grid-template-columns: 1fr; }
+  .topo, .filtros { padding-left: 16px; padding-right: 16px; }
+  .conteudo { padding-left: 16px; padding-right: 16px; }
+  .filtro-datas { margin-left: 0; }
+}
+@media (max-width: 640px) {
+  .kpis { grid-template-columns: repeat(2, 1fr); }
+  .sla { grid-template-columns: 1fr; }
+  .sla-item + .sla-item { border-left: none; border-top: 1px solid var(--borda); }
+  .marca-sub, .ao-vivo { display: none; }
+  .periodo-tag { font-size: 10.5px; padding: 4px 8px; white-space: nowrap; }
+  .marca-nome span { display: none; }
+  .topo-direita { gap: 8px; }
+  .marca-icone { width: 32px; height: 32px; }
+  .btn-sair { padding: 5px 10px; }
+  .periodo-tag svg.ic { display: none; }
+  .secao { flex-direction: column; gap: 2px; align-items: flex-start; }
+  .ranking-item { grid-template-columns: 22px 1fr 40px 44px; }
+  .ranking-trilho { grid-column: 2 / -1; grid-row: 2; }
+  .kpi-valor { font-size: 26px; }
 }
 
-.carregando-overlay.visivel { display: flex; }
-.spinner {
-  width: 40px; height: 40px;
-  border: 3px solid var(--cinza-borda);
-  border-top-color: var(--azul);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-.carregando-texto { font-size: 13px; color: var(--cinza-texto); }
-
-/* PERÍODO EXIBIDO */
-.periodo-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(37,99,235,0.1);
-  border: 1px solid rgba(37,99,235,0.25);
-  border-radius: 20px;
-  padding: 4px 12px;
-  font-size: 11px;
-  color: var(--azul-escuro);
-  font-weight: 500;
-  margin-left: 12px;
-}
-.fila-aviso {
-  font-size: 11px;
-  color: var(--cinza-texto);
-  margin-bottom: 12px;
-  font-style: italic;
-}
-.fila-colunas {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-}
-@media (max-width: 760px) { .fila-colunas { grid-template-columns: 1fr; } }
-.fila-card {
-  background: var(--cinza-escuro);
-  border: 1px solid var(--cinza-borda);
-  border-radius: 12px;
-  padding: 16px 18px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-}
-.fila-card-titulo {
-  font-size: 13px;
-  font-weight: 600;
-  margin-bottom: 12px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.fila-badge {
-  font-size: 11px;
-  font-weight: 700;
-  padding: 2px 9px;
-  border-radius: 20px;
-}
-.fila-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 9px 0;
-  border-bottom: 1px solid var(--cinza-borda);
-}
-.fila-item:last-child { border-bottom: none; }
-.fila-item-info { display: flex; flex-direction: column; gap: 2px; }
-.fila-item-nome { font-size: 13px; font-weight: 500; color: var(--branco); }
-.fila-item-tipo { font-size: 11px; color: var(--cinza-texto); text-transform: capitalize; }
-.fila-item-tempo { font-size: 13px; font-weight: 600; white-space: nowrap; }
-.fila-vazia { color: var(--cinza-texto); font-size: 12.5px; padding: 16px 0; text-align: center; }
+/* MODAL DO CÓDIGO */
+.modal-token-overlay { display:none; position:fixed; inset:0; background:rgba(11,58,91,0.45); z-index:300; align-items:center; justify-content:center; padding: 16px; }
+.modal-token-overlay.visivel { display:flex; }
+.modal-token { background:var(--branco); border-radius:16px; padding:28px; width:360px; max-width:100%; box-shadow:var(--sombra-3); }
+.modal-token .cad { width:44px; height:44px; border-radius:12px; background:var(--azul-claro); color:var(--azul); display:flex; align-items:center; justify-content:center; margin-bottom:14px; }
+.modal-token h3 { font-size:16px; color:var(--texto); margin-bottom:6px; }
+.modal-token p { font-size:12.5px; color:var(--texto-suave); margin-bottom:16px; line-height: 1.5; }
+.modal-token .erro { display:none; background:var(--vermelho-claro); color:var(--vermelho-escuro); font-size:12px; padding:8px 12px; border-radius:8px; margin-bottom:12px; }
+.modal-token input { width:100%; padding:11px 13px; border:1.5px solid var(--borda); border-radius:10px; font-size:14px; font-family:inherit; margin-bottom:12px; outline:none; }
+.modal-token input:focus { border-color:var(--azul); box-shadow: 0 0 0 3px var(--azul-claro); }
+.modal-token button { width:100%; background:var(--azul); color:#fff; border:none; border-radius:10px; padding:11px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit; }
+.modal-token button:hover { background:var(--marinho); }
 </style>
 </head>
 <body>
 
-<div class="carregando-overlay" id="overlay">
-  <div class="spinner"></div>
-  <div class="carregando-texto">Calculando indicadores...</div>
-</div>
+<!-- Ícones (traço fino, mesmo estilo do painel) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-robo" viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="11" rx="3"/><path d="M12 4v4M9 13h.01M15 13h.01M9.5 16.5h5"/></symbol>
+  <symbol id="i-balao" viewBox="0 0 24 24"><path d="M4 5.5h16a1 1 0 0 1 1 1V16a1 1 0 0 1-1 1H9l-4.5 4V17H4a1 1 0 0 1-1-1V6.5a1 1 0 0 1 1-1z"/></symbol>
+  <symbol id="i-relogio" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.2l2.4 2.4 4.6-4.8"/></symbol>
+  <symbol id="i-fila" viewBox="0 0 24 24"><path d="M7 4h10M7 20h10M8 4c0 4 8 4 8 8s-8 4-8 8M16 4c0 4-8 4-8 8"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-grafico" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></symbol>
+  <symbol id="i-alerta" viewBox="0 0 24 24"><path d="M12 3.5L2.5 20h19L12 3.5z"/><path d="M12 10v4.5M12 17.5h.01"/></symbol>
+  <symbol id="i-cadeado" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></symbol>
+</svg>
 
-<header>
-  <div class="logo">
-    <div class="logo-icone">❤</div>
+<div class="carregando" id="overlay"></div>
+
+<header class="topo">
+  <div class="marca">
+    <div class="marca-icone">
+      <svg class="coracao" viewBox="0 0 40 40"><path d="M20 33.5 C20 33.5 6 24.8 6 15.6 C6 10.4 10 7 14.2 7 C17 7 19 8.6 20 10.6 C21 8.6 23 7 25.8 7 C30 7 34 10.4 34 15.6 C34 24.8 20 33.5 20 33.5 Z"/></svg>
+    </div>
     <div>
-      <div class="logo-nome">Cardiocenter <span style="font-weight:400;color:var(--cinza-texto)">/ Dashboard</span></div>
-      <div class="logo-sub">Performance do Agente de Atendimento</div>
+      <div class="marca-nome">Cardiocenter <span>/ Dashboard</span></div>
+      <div class="marca-sub">Performance do agente de atendimento</div>
     </div>
   </div>
-  <div style="display:flex; align-items:center; gap:14px;">
+  <div class="topo-direita">
+    <span class="ao-vivo" title="Os dados se atualizam sozinhos a cada minuto"><i></i>ao vivo</span>
     <div id="periodo-tag"></div>
-    <button onclick="confirmarSaidaDash()" title="Encerra a sessão nesta máquina: apaga o código de acesso salvo" style="background:none; border:1px solid var(--cinza-borda); color:var(--cinza-texto); font-size:11.5px; padding:6px 12px; border-radius:8px; cursor:pointer; font-family:inherit;">Sair</button>
+    <button class="btn-sair" onclick="confirmarSaidaDash()" title="Encerra a sessão nesta máquina: apaga o código de acesso salvo">Sair</button>
   </div>
 </header>
 
-<div class="filtro-bar">
-  <span class="filtro-label">Período rápido:</span>
-  <div class="filtro-grupo">
+<div class="filtros">
+  <span class="filtro-label">Período</span>
+  <div class="segmentado">
     <button class="filtro-btn" onclick="periodoRapido('hoje', this)">Hoje</button>
     <button class="filtro-btn" onclick="periodoRapido('semana', this)">Esta semana</button>
     <button class="filtro-btn ativo" onclick="periodoRapido('mes', this)">Este mês</button>
     <button class="filtro-btn" onclick="periodoRapido('trimestre', this)">Trimestre</button>
   </div>
   <div class="filtro-datas">
-    <span class="filtro-label">Ou escolha:</span>
+    <span class="filtro-label">ou de</span>
     <input type="date" id="data-inicio">
     <span class="filtro-label">até</span>
     <input type="date" id="data-fim">
-    <button class="btn-buscar" onclick="buscarPersonalizado()">Aplicar</button>
+    <button class="btn-aplicar" onclick="buscarPersonalizado()">Aplicar</button>
   </div>
 </div>
 
-<div class="conteudo" id="conteudo">
+<main class="conteudo" id="conteudo">
   <div class="estado-vazio">
-    <div class="icone">📊</div>
+    <div class="icone"><svg class="ic"><use href="#i-grafico"/></svg></div>
     <div class="titulo">Selecione um período para carregar os dados</div>
-    <div class="sub">Use os filtros acima para visualizar as estatísticas</div>
+    <div class="sub">Use os filtros acima para ver os indicadores</div>
   </div>
-</div>
+</main>
 
 <script>
 const WEBHOOK_URL = 'https://coldbloodedchameleon-n8n.cloudfy.live/webhook/dashboard-cardiocenter';
@@ -514,6 +343,18 @@ function tokenInputTeclado(ev) { if (ev.key === 'Enter') { ev.preventDefault(); 
 
 let chartHorarios = null;
 let chartServicos = null;
+
+/* Paleta dos gráficos derivada das cores do painel */
+const COR = { marinho: '#0B3A5B', azul: '#1769AA', verde: '#2E9B62', amarelo: '#E9A227', vermelho: '#D9524F', roxo: '#7657C8', texto: '#5F6B76', grade: 'rgba(11,58,91,0.07)' };
+const PALETA = ['#1769AA', '#0B3A5B', '#2E9B62', '#E9A227', '#7657C8', '#D9524F', '#4FA3D9', '#8FB8D6', '#7FC6A0', '#8A97A3'];
+
+function esc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function iniciais(nome) {
+  const p = String(nome || '').trim().split(/\s+/).filter(Boolean);
+  if (!p.length) return '?';
+  return (p[0][0] + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase();
+}
+function icone(id) { return `<svg class="ic"><use href="#${id}"/></svg>`; }
 
 function formatarData(d) {
   return d.toISOString().slice(0,10);
@@ -576,7 +417,7 @@ async function buscar(inicio, fim) {
   } catch(e) {
     document.getElementById('conteudo').innerHTML = `
       <div class="estado-vazio">
-        <div class="icone">⚠️</div>
+        <div class="icone erro">${icone('i-alerta')}</div>
         <div class="titulo">Erro ao carregar dados</div>
         <div class="sub">Verifique se o workflow WEBHOOK DASHBOARD está ativo no N8N</div>
       </div>`;
@@ -604,113 +445,76 @@ function renderizar(d, inicio, fim) {
   const filaAguardando = d.fila_aguardando || [];
   const filaEmAtendimento = d.fila_em_atendimento || [];
 
-  // Atualiza tag de período
+  // Tag de período
   const ini = new Date(inicio + 'T00:00:00').toLocaleDateString('pt-BR');
   const fimD = new Date(fim.slice(0,10) + 'T00:00:00').toLocaleDateString('pt-BR');
   document.getElementById('periodo-tag').innerHTML =
-    `<span class="periodo-tag">📅 ${ini} → ${fimD}</span>`;
+    `<span class="periodo-tag">${icone('i-cal')}<span class="num">${ini} → ${fimD}</span></span>`;
 
   // Tempo trabalhado
   const tempoStr = r.tempo_agente_horas > 0
     ? `${r.tempo_agente_horas}h ${r.tempo_agente_minutos}min`
     : `${r.tempo_agente_minutos || 0}min`;
 
+  const kpi = (cor, ic, valor, label, detalhe) => `
+      <div class="card kpi ${cor}">
+        <div class="kpi-topo"><span class="kpi-label">${label}</span><span class="kpi-icone">${icone(ic)}</span></div>
+        <div class="kpi-valor num">${valor}</div>
+        <div class="kpi-detalhe">${detalhe}</div>
+      </div>`;
+
   const html = `
-    <div class="secao-titulo">Visão Geral do Período</div>
+    <div class="secao"><h2>Visão geral do período</h2></div>
     <div class="kpis">
-      <div class="kpi verde">
-        <div class="kpi-icone">🤖</div>
-        <div class="kpi-valor">${r.total_agendamentos || 0}</div>
-        <div class="kpi-label">Atendimentos realizados</div>
-        <div class="kpi-detalhe">pelo agente no período</div>
-      </div>
-      <div class="kpi azul">
-        <div class="kpi-icone">💬</div>
-        <div class="kpi-valor">${r.perguntas_respondidas || 0}</div>
-        <div class="kpi-label">Perguntas respondidas</div>
-        <div class="kpi-detalhe">sem intervenção humana</div>
-      </div>
-      <div class="kpi amarelo">
-        <div class="kpi-icone">⏱️</div>
-        <div class="kpi-valor">${tempoStr}</div>
-        <div class="kpi-label">Tempo trabalhado</div>
-        <div class="kpi-detalhe">estimativa do agente</div>
-      </div>
-      <div class="kpi roxo">
-        <div class="kpi-icone">✅</div>
-        <div class="kpi-valor">${r.total_concluidos || 0}</div>
-        <div class="kpi-label">Agendamentos concluídos</div>
-        <div class="kpi-detalhe">${r.em_atendimento || 0} em atendimento agora</div>
-      </div>
-      <div class="kpi laranja">
-        <div class="kpi-icone">⏳</div>
-        <div class="kpi-valor">${r.pendentes || 0}</div>
-        <div class="kpi-label">Aguardando atendimento</div>
-        <div class="kpi-detalhe">na fila atual</div>
-      </div>
+      ${kpi('verde', 'i-robo', r.total_agendamentos || 0, 'Atendimentos realizados', 'pelo agente no período')}
+      ${kpi('azul', 'i-balao', r.perguntas_respondidas || 0, 'Perguntas respondidas', 'sem intervenção humana')}
+      ${kpi('amarelo', 'i-relogio', tempoStr, 'Tempo trabalhado', 'estimativa do agente')}
+      ${kpi('roxo', 'i-check', r.total_concluidos || 0, 'Agendamentos concluídos', `${r.em_atendimento || 0} em atendimento agora`)}
+      ${kpi('vermelho', 'i-fila', r.pendentes || 0, 'Aguardando atendimento', 'na fila atual')}
     </div>
 
-    <div class="secao-titulo">SLA de Atendimento — Tempo até a recepção assumir</div>
-    <div class="grafico-card" style="margin-bottom:14px">
-      <div class="sla-grid">
-        <div class="sla-item">
-          <div class="sla-valor" style="color:var(--verde)">${formatarMinutos(sla.minimo_minutos)}</div>
-          <div class="sla-label">Mais rápido</div>
-        </div>
-        <div class="sla-item">
-          <div class="sla-valor" style="color:var(--amarelo)">${formatarMinutos(sla.medio_minutos)}</div>
-          <div class="sla-label">Tempo médio</div>
-        </div>
-        <div class="sla-item">
-          <div class="sla-valor" style="color:var(--vermelho)">${formatarMinutos(sla.maximo_minutos)}</div>
-          <div class="sla-label">Mais lento</div>
-        </div>
-      </div>
+    <div class="secao"><h2>Tempo até a recepção assumir</h2><p>SLA de atendimento no período</p></div>
+    <div class="card sla">
+      <div class="sla-item"><span class="sla-ponto" style="background:var(--verde)"></span>
+        <div><div class="sla-valor num" style="color:var(--verde)">${formatarMinutos(sla.minimo_minutos)}</div><div class="sla-label">Mais rápido</div></div></div>
+      <div class="sla-item"><span class="sla-ponto" style="background:var(--amarelo)"></span>
+        <div><div class="sla-valor num" style="color:#B87A10">${formatarMinutos(sla.medio_minutos)}</div><div class="sla-label">Tempo médio</div></div></div>
+      <div class="sla-item"><span class="sla-ponto" style="background:var(--vermelho)"></span>
+        <div><div class="sla-valor num" style="color:var(--vermelho)">${formatarMinutos(sla.maximo_minutos)}</div><div class="sla-label">Mais lento</div></div></div>
     </div>
 
-    <div class="secao-titulo">Fila de Espera (agora)</div>
-    <div class="fila-aviso">Situação em tempo real, no momento da consulta — não depende do período selecionado acima.</div>
+    <div class="secao"><h2>Fila de espera agora</h2><p>Tempo real, não depende do período escolhido</p></div>
     <div class="fila-colunas">
-      <div class="fila-card">
-        <div class="fila-card-titulo">
-          <span class="fila-badge" style="background:rgba(243,156,18,0.18);color:#B9770E">AGUARDANDO</span>
-          <span id="fila-aguardando-count">0</span> na fila
-        </div>
+      <div class="card fila-card">
+        <div class="fila-titulo"><strong><i></i>Aguardando</strong><span class="fila-contador num" id="fila-aguardando-count">0</span></div>
         <div id="fila-aguardando-lista"></div>
       </div>
-      <div class="fila-card">
-        <div class="fila-card-titulo">
-          <span class="fila-badge" style="background:rgba(37,99,235,0.14);color:#1E3A5F">EM ATENDIMENTO</span>
-          <span id="fila-atendimento-count">0</span> em andamento
-        </div>
+      <div class="card fila-card atendimento">
+        <div class="fila-titulo"><strong><i></i>Em atendimento</strong><span class="fila-contador num" id="fila-atendimento-count">0</span></div>
         <div id="fila-atendimento-lista"></div>
       </div>
     </div>
 
-    <div class="secao-titulo">Distribuição e Horários</div>
-    <div class="graficos-linha">
-      <div class="grafico-card">
-        <div class="grafico-titulo">Horários de Pico</div>
-        <div class="grafico-sub">Concentração de mensagens por hora do dia</div>
-        <div class="grafico-container">
-          <canvas id="chartHorarios"></canvas>
-        </div>
+    <div class="secao"><h2>Distribuição e horários</h2></div>
+    <div class="graficos">
+      <div class="card grafico-card">
+        <div class="grafico-titulo">Horários de pico</div>
+        <div class="grafico-sub">Mensagens recebidas por hora do dia</div>
+        <div class="grafico-area"><canvas id="chartHorarios"></canvas></div>
       </div>
-      <div class="grafico-card">
-        <div class="grafico-titulo">Serviços Mais Solicitados</div>
+      <div class="card grafico-card">
+        <div class="grafico-titulo">Serviços mais solicitados</div>
         <div class="grafico-sub">Distribuição por tipo de exame ou consulta</div>
-        <div class="grafico-container">
-          <canvas id="chartServicos"></canvas>
-        </div>
+        <div class="grafico-area"><canvas id="chartServicos"></canvas></div>
       </div>
     </div>
 
-    <div class="secao-titulo">Ranking de Convênios</div>
-    <div class="grafico-card">
-      <div class="grafico-titulo">Convênios mais frequentes no período</div>
-      <div class="grafico-sub">Baseado nos pré-agendamentos recebidos</div>
-      <div class="ranking-lista" id="rankingConvenios"></div>
+    <div class="secao"><h2>Ranking de convênios</h2><p>Baseado nos pré-agendamentos recebidos no período</p></div>
+    <div class="card grafico-card">
+      <div class="ranking" id="rankingConvenios"></div>
     </div>
+
+    <div class="atualizado">Atualizado às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} · atualiza sozinho a cada minuto</div>
   `;
 
   document.getElementById('conteudo').innerHTML = html;
@@ -724,11 +528,13 @@ function renderizar(d, inicio, fim) {
     const m = min % 60;
     return m > 0 ? `${h}h ${m}min` : `${h}h`;
   }
-  function corTempo(min) {
-    if (min >= 120) return 'var(--vermelho)';
-    if (min >= 30) return 'var(--amarelo)';
-    return 'var(--verde)';
+  function estiloTempo(min) {
+    min = parseInt(min) || 0;
+    if (min >= 120) return 'background:var(--vermelho-claro);color:var(--vermelho-escuro)';
+    if (min >= 30) return 'background:var(--amarelo-claro);color:#9A6608';
+    return 'background:var(--verde-claro);color:var(--verde)';
   }
+  const TIPOS = { novo: 'Agendamento', remarcacao: 'Reagendamento', cancelamento: 'Cancelamento', duvida_valor: 'Dúvida', documento: 'Documentos recebidos' };
   function renderFila(lista, elId, vazio) {
     const el = document.getElementById(elId);
     if (!lista || lista.length === 0) {
@@ -737,11 +543,12 @@ function renderizar(d, inicio, fim) {
     }
     el.innerHTML = lista.map(p => `
       <div class="fila-item">
-        <div class="fila-item-info">
-          <span class="fila-item-nome">${p.nome || '—'}</span>
-          <span class="fila-item-tipo">${(p.tipo || 'novo').replace('novo','Agendamento').replace('remarcacao','Reagendamento').replace('cancelamento','Cancelamento').replace('duvida_valor','Dúvida de valor')}</span>
+        <span class="avatar">${esc(iniciais(p.nome))}</span>
+        <div class="fila-info">
+          <span class="fila-nome">${esc(p.nome || '—')}</span>
+          <span class="fila-tipo">${esc(TIPOS[p.tipo || 'novo'] || p.tipo)}</span>
         </div>
-        <span class="fila-item-tempo" style="color:${corTempo(p.minutos)}">${formatarEspera(p.minutos)}</span>
+        <span class="fila-tempo num" style="${estiloTempo(p.minutos)}">${formatarEspera(p.minutos)}</span>
       </div>`).join('');
   }
   document.getElementById('fila-aguardando-count').textContent = filaAguardando.length;
@@ -749,10 +556,14 @@ function renderizar(d, inicio, fim) {
   renderFila(filaAguardando, 'fila-aguardando-lista', 'Ninguém aguardando no momento');
   renderFila(filaEmAtendimento, 'fila-atendimento-lista', 'Nenhum atendimento em andamento');
 
-  // Gráfico horários
+  Chart.defaults.font.family = "'Inter', sans-serif";
+  Chart.defaults.color = COR.texto;
+
+  // Gráfico de horários: horário de pico em marinho, demais em azul claro
   const horasLabels = Array.from({length:24}, (_,i) => i + 'h');
   const horasDados = Array(24).fill(0);
   horarios.forEach(h => { horasDados[parseInt(h.hora)] = parseInt(h.total); });
+  const maxHora = Math.max(...horasDados);
 
   if (chartHorarios) chartHorarios.destroy();
   chartHorarios = new Chart(document.getElementById('chartHorarios'), {
@@ -761,63 +572,69 @@ function renderizar(d, inicio, fim) {
       labels: horasLabels,
       datasets: [{
         data: horasDados,
-        backgroundColor: horasDados.map(v => v === Math.max(...horasDados) ? '#2563EB' : 'rgba(37,99,235,0.25)'),
-        borderRadius: 4,
-        borderSkipped: false
+        backgroundColor: horasDados.map(v => v === maxHora && v > 0 ? COR.marinho : 'rgba(23,105,170,0.35)'),
+        hoverBackgroundColor: COR.azul,
+        borderRadius: 5,
+        borderSkipped: false,
+        maxBarThickness: 22
       }]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      plugins: {
+        legend: { display: false },
+        tooltip: { backgroundColor: COR.marinho, padding: 10, displayColors: false,
+          callbacks: { title: it => it[0].label, label: it => `${it.parsed.y} mensagens` } }
+      },
       scales: {
-        x: { ticks: { color: '#64748B', font: {size:10} }, grid: { color: 'rgba(0,0,0,0.07)' } },
-        y: { ticks: { color: '#64748B', font: {size:10} }, grid: { color: 'rgba(0,0,0,0.07)' }, beginAtZero: true }
+        x: { ticks: { font: { size: 10 } }, grid: { display: false }, border: { display: false } },
+        y: { ticks: { font: { size: 10 }, precision: 0 }, grid: { color: COR.grade }, border: { display: false }, beginAtZero: true }
       }
     }
   });
 
-  // Gráfico serviços
+  // Gráfico de serviços
   if (chartServicos) chartServicos.destroy();
-  const cores = ['#2563EB','#0EA5E9','#14B8A6','#16A34A','#F59E0B','#7C3AED','#EC4899','#64748B','#EA580C','#0891B2'];
   chartServicos = new Chart(document.getElementById('chartServicos'), {
     type: 'doughnut',
     data: {
       labels: servicos.map(s => s.servico),
       datasets: [{
         data: servicos.map(s => s.total),
-        backgroundColor: cores,
-        borderWidth: 0,
+        backgroundColor: PALETA,
+        borderColor: '#FFFFFF',
+        borderWidth: 2,
         hoverOffset: 6
       }]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
+      cutout: '62%',
       plugins: {
         legend: {
-          position: 'right',
-          labels: { color: '#64748B', font: {size:11}, boxWidth: 12, padding: 14 }
-        }
+          position: window.innerWidth < 640 ? 'bottom' : 'right',
+          labels: { font: { size: 11 }, boxWidth: 10, boxHeight: 10, usePointStyle: true, pointStyle: 'circle', padding: 12 }
+        },
+        tooltip: { backgroundColor: COR.marinho, padding: 10 }
       }
     }
   });
 
-  // Ranking convênios
+  // Ranking de convênios
   const maxConvenio = convenios.length > 0 ? convenios[0].total : 1;
-  const paletaConvenios = ['#2563EB','#0EA5E9','#14B8A6','#16A34A','#F59E0B','#7C3AED','#EC4899','#64748B','#EA580C','#0891B2'];
   const rankingEl = document.getElementById('rankingConvenios');
   if (convenios.length === 0) {
-    rankingEl.innerHTML = '<div style="color:var(--cinza-texto);font-size:13px;padding:20px 0;text-align:center">Nenhum dado no período</div>';
+    rankingEl.innerHTML = '<div class="fila-vazia">Nenhum dado no período</div>';
   } else {
     rankingEl.innerHTML = convenios.map((c, i) => `
       <div class="ranking-item">
         <div class="ranking-pos ${i < 3 ? 'top' : ''}">${i+1}</div>
-        <div class="ranking-cor" style="background:${paletaConvenios[i % paletaConvenios.length]}"></div>
-        <div class="ranking-nome">${c.convenio}</div>
-        <div class="ranking-barra-wrap">
-          <div class="ranking-barra" style="width:${(c.total/maxConvenio*100).toFixed(0)}%;background:${paletaConvenios[i % paletaConvenios.length]}"></div>
+        <div class="ranking-nome" title="${esc(c.convenio)}">${esc(c.convenio)}</div>
+        <div class="ranking-trilho">
+          <div class="ranking-barra" style="width:${(c.total/maxConvenio*100).toFixed(0)}%;background:${i === 0 ? COR.marinho : COR.azul};opacity:${Math.max(0.45, 1 - i * 0.08)}"></div>
         </div>
-        <div class="ranking-total">${c.total}</div>
-        <div class="ranking-pct">${c.percentual}%</div>
+        <div class="ranking-total num">${c.total}</div>
+        <div class="ranking-pct num">${c.percentual}%</div>
       </div>`).join('');
   }
 }
@@ -830,7 +647,7 @@ window.addEventListener('load', () => {
   document.getElementById('data-fim').value = formatarData(hoje);
   buscar(formatarData(ini), formatarData(hoje) + ' 23:59:59');
 });
-  // Auto-refresh: re-busca os dados do período atual a cada 60 segundos,
+// Auto-refresh: re-busca os dados do período atual a cada 60 segundos,
 // sem recarregar a página. Não mexe nos filtros escolhidos pelo usuário.
 setInterval(() => {
   if (_ultimaBusca) {
@@ -839,21 +656,10 @@ setInterval(() => {
 }, 60000);
 </script>
 
-<style>
-.modal-token-overlay { display:none; position:fixed; inset:0; background:rgba(28,40,51,0.45); z-index:300; align-items:center; justify-content:center; }
-.modal-token-overlay.visivel { display:flex; }
-.modal-token { background:#fff; border-radius:16px; padding:26px; width:360px; max-width:90vw; box-shadow:0 10px 40px rgba(0,0,0,0.18); font-family:'Inter',sans-serif; }
-.modal-token h3 { font-size:15px; color:var(--branco); margin-bottom:8px; }
-.modal-token p { font-size:12.5px; color:var(--cinza-texto); margin-bottom:14px; }
-.modal-token .erro { display:none; background:var(--vermelho-suave); color:var(--vermelho-escuro); font-size:12px; padding:8px 12px; border-radius:8px; margin-bottom:12px; }
-.modal-token input { width:100%; padding:11px 13px; border:1.5px solid var(--cinza-borda); border-radius:10px; font-size:14px; font-family:inherit; margin-bottom:12px; outline:none; }
-.modal-token input:focus { border-color:var(--azul); }
-.modal-token button { width:100%; background:var(--azul); color:#fff; border:none; border-radius:10px; padding:11px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit; }
-.modal-token button:hover { background:var(--azul-escuro); }
-</style>
 <div class="modal-token-overlay" id="modalToken">
   <div class="modal-token">
-    <h3>🔒 Código de acesso</h3>
+    <div class="cad"><svg class="ic"><use href="#i-cadeado"/></svg></div>
+    <h3>Código de acesso</h3>
     <p>Este dashboard é restrito à administração da Cardiocenter. Digite o código de acesso para continuar.</p>
     <div class="erro" id="tokenErro"></div>
     <input type="password" id="tokenInput" placeholder="Código de acesso" onkeydown="tokenInputTeclado(event)">
