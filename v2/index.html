@@ -1071,6 +1071,7 @@ body {
   #tabConfirmacoes .barra-controles,
   #tabConfirmacoes .periodo-bar { padding-left: 14px; padding-right: 14px; }
 }
+.tel-oculto { color: #b45309; font-size: 0.85em; font-weight: 500; }
 </style>
 </head>
 <body>
@@ -1386,11 +1387,42 @@ function renderizarKanban() {
     : estadoVazioColuna(termoBusca ? 'Nenhum nome encontrado' : 'Nada por aqui');
 }
 
+/* 16/11: número oculto pelo WhatsApp (LID). O agente pede o celular com DDD e grava em celular_informado. */
+function numeroOculto(t) {
+  const d = String(t || '').split('@')[0].replace(/\D/g, '');
+  return !/^55\d{10,11}$/.test(d) && d.length >= 14;
+}
+function formataCelularInformado(c) {
+  const n = String(c || '').replace(/\D/g, '').replace(/^55/, '');
+  if (n.length === 11) return '(' + n.slice(0, 2) + ') ' + n.slice(2, 7) + '-' + n.slice(7);
+  if (n.length === 10) return '(' + n.slice(0, 2) + ') ' + n.slice(2, 6) + '-' + n.slice(6);
+  return '';
+}
+function telExibe(a) {
+  if (!numeroOculto(a.telefone)) return (a.telefone || '').replace(/\D/g, '').replace(/^55/, '') || '—';
+  const cel = formataCelularInformado(a.celular_informado);
+  return cel
+    ? cel + ' <span class="tel-oculto">(informado pelo paciente — o WhatsApp esconde o número)</span>'
+    : '<span class="tel-oculto">Número oculto pelo WhatsApp — o agente pediu o celular ao paciente</span>';
+}
+function cardDoChat(id, telefone) {
+  const lista = (typeof todosAgendamentos !== 'undefined' && todosAgendamentos) || [];
+  return lista.find(x => String(x.id) === String(id))
+      || lista.find(x => x.celular_informado && String(x.telefone || '').replace(/\D/g, '') === String(telefone || '').replace(/\D/g, ''))
+      || null;
+}
+function telChatExibe(id, telefone) {
+  if (!numeroOculto(telefone)) return String(telefone || '').replace(/[<>&"']/g, '');
+  const c = cardDoChat(id, telefone);
+  const cel = c ? formataCelularInformado(c.celular_informado) : '';
+  return 'Número oculto pelo WhatsApp' + (cel ? ' · Celular: ' + cel : ' · celular ainda não informado');
+}
+
 function criarCard(a) {
   const data = new Date(a.created_at);
   const dataFormatada = data.toLocaleDateString('pt-BR') + ' às ' + data.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
   const tel = (a.telefone || '').replace(/\D/g, '').replace(/^55/, '');
-  const telWhats = '55' + tel;
+  const telWhats = (numeroOculto(a.telefone) && a.celular_informado) ? String(a.celular_informado).replace(/\D/g, '') : '55' + tel;
   const tipo = a.tipo_solicitacao || 'novo';
   const nome = a.nome && a.nome.trim() !== '' ? a.nome : 'Paciente não identificado';
 
@@ -1450,7 +1482,7 @@ function criarCard(a) {
         </div>
         <div class="campo">
           <div class="campo-label">Telefone</div>
-          <div class="campo-valor">${tel || '—'}</div>
+          <div class="campo-valor">${telExibe(a)}</div>
         </div>
         <div class="campo">
           <div class="campo-label">Nascimento</div>
@@ -1482,7 +1514,7 @@ function criarCard(a) {
         </div>` : ''}
         <div class="campo full">
           <div class="campo-label">Telefone</div>
-          <div class="campo-valor">${tel || '—'}</div>
+          <div class="campo-valor">${telExibe(a)}</div>
         </div>`;
   }
   
@@ -1641,7 +1673,7 @@ function abrirDetalheConcluido(id) {
   const data = new Date(a.created_at);
   const dataFormatada = data.toLocaleDateString('pt-BR') + ' às ' + data.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
   const tel = (a.telefone || '').replace(/\D/g, '').replace(/^55/, '');
-  const telWhats = '55' + tel;
+  const telWhats = (numeroOculto(a.telefone) && a.celular_informado) ? String(a.celular_informado).replace(/\D/g, '') : '55' + tel;
   const tipo = a.tipo_solicitacao || 'novo';
 
   document.getElementById('detalhe-nome').textContent = a.nome || '—';
@@ -1668,7 +1700,7 @@ function abrirDetalheConcluido(id) {
       </div>
       <div class="campo">
         <div class="campo-label">Telefone</div>
-        <div class="campo-valor">${tel || '—'}</div>
+        <div class="campo-valor">${telExibe(a)}</div>
       </div>
       <div class="campo">
         <div class="campo-label">Nascimento</div>
@@ -1695,7 +1727,7 @@ function abrirDetalheConcluido(id) {
       </div>
       <div class="campo full">
         <div class="campo-label">Telefone</div>
-        <div class="campo-valor">${tel || '—'}</div>
+        <div class="campo-valor">${telExibe(a)}</div>
       </div>`;
   } else {
     const tipoLabels = { cancelamento: 'Cancelamento', remarcacao: 'Remarcação' };
@@ -1715,7 +1747,7 @@ function abrirDetalheConcluido(id) {
       </div>` : ''}
       <div class="campo full">
         <div class="campo-label">Telefone</div>
-        <div class="campo-valor">${tel || '—'}</div>
+        <div class="campo-valor">${telExibe(a)}</div>
       </div>`;
   }
 
@@ -1765,7 +1797,7 @@ async function abrirChat(id, telefone, nome, precisaAssumirPrimeiro) {
   _chatNome = nome;
 
   document.getElementById('chatNome').textContent = nome;
-  document.getElementById('chatTelefoneTexto').textContent = telefone;
+  document.getElementById('chatTelefoneTexto').textContent = telChatExibe(id, telefone);
 
   // Pré-preenche o campo com o template de confirmação (mesmo usado no botão WhatsApp),
   // somente para cards de agendamento (novo/cancelamento/remarcacao) ainda não concluídos.
@@ -1948,6 +1980,8 @@ async function encerrarChatAtual() {
 function abrirWhatsAppDoChat() {
   if (!_chatTelefone) return;
   const tel = (_chatTelefone || '').replace(/\D/g, '').replace(/^55/, '');
+  const c = numeroOculto(_chatTelefone) ? cardDoChat(_chatId, _chatTelefone) : null;
+  if (c && c.celular_informado) { abrirWhatsApp(String(c.celular_informado).replace(/\D/g, ''), ''); return; }
   abrirWhatsApp('55' + tel, '');
 }
 
