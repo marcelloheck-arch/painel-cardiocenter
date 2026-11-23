@@ -1973,42 +1973,72 @@ function escaparHtml(texto) {
   return div.innerHTML;
 }
 
-// 23/11: confere a data (e o horário) da mensagem de confirmação antes de enviar.
-// Só age quando a mensagem tem a linha "📅 Data:" do modelo de confirmação.
-// Aceita 21/12/2026, 21/12/26, 21/12, 21-12, 21.12, 2112, 21122026. Devolve a data padronizada
-// com o dia da semana, ou um erro para a atendente corrigir antes do envio.
+// 23/11: confere as datas das mensagens enviadas pelo chat do painel antes de mandar.
+// 1) Linha "📅 Data:" do modelo de confirmação: data obrigatória e futura; sai como "21/12/2026 (segunda-feira)".
+// 2) Texto livre: "dia 1212", "data 21122026", "dia 21-12" e qualquer "21/12" ou "21/12/2026".
+//    Data futura sai completa com o dia da semana. Data recente já passada (até 90 dias) só é padronizada.
+//    Data que não existe (31/02, 32002, 1313) bloqueia o envio para a atendente corrigir.
 const DIAS_SEMANA_CONF = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
-function normalizarDataConfirmacao(valor, hoje) {
+function lerDataConfirmacao(valor) {
+  const v = String(valor || '').trim();
+  let r = v.match(/^(\d{1,2})\s*[\/.\-]\s*(\d{1,2})(?:\s*[\/.\-]\s*(\d{4}|\d{2}))?$/);
+  if (r) return { d: +r[1], m: +r[2], a: r[3] };
+  r = v.match(/^(\d{2})(\d{2})(\d{4}|\d{2})?$/);
+  if (r) return { d: +r[1], m: +r[2], a: r[3] };
+  return null;
+}
+function normalizarDataConfirmacao(valor, hoje, livre) {
   hoje = hoje || new Date();
-  const v = String(valor || '').trim().replace(/\s*\((domingo|segunda|terça|terca|quarta|quinta|sexta|sábado|sabado)[^)]*\)\s*$/i, '');
-  let d, m, a;
-  let r = v.match(/^(\d{1,2})\s*[\/.\-]\s*(\d{1,2})(?:\s*[\/.\-]\s*(\d{2}|\d{4}))?$/);
-  if (r) { d = +r[1]; m = +r[2]; a = r[3]; }
-  else if ((r = v.match(/^(\d{2})(\d{2})(\d{4}|\d{2})?$/))) { d = +r[1]; m = +r[2]; a = r[3]; }
-  else return { erro: 'escreva a data como dia/mês/ano, por exemplo 21/12/2026' };
+  const lido = lerDataConfirmacao(String(valor || '').replace(/\s*\((domingo|segunda|terça|terca|quarta|quinta|sexta|sábado|sabado)[^)]*\)\s*$/i, ''));
+  if (!lido) return { erro: 'escreva a data como dia/mês/ano, por exemplo 21/12/2026' };
+  const { d, m, a } = lido;
   const h0 = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
-  let ano;
-  if (a) ano = a.length === 2 ? 2000 + +a : +a;
-  else {
-    ano = h0.getFullYear();
-    if (new Date(ano, m - 1, d) < h0) ano++;          // sem ano e já passou este ano: é do ano que vem
-  }
-  const dt = new Date(ano, m - 1, d);
-  if (m < 1 || m > 12 || dt.getDate() !== d || dt.getMonth() !== m - 1) return { erro: 'essa data não existe no calendário' };
-  if (dt < h0) return { erro: 'essa data já passou' };
   const p = n => String(n).padStart(2, '0');
+  let ano = a ? (a.length === 2 ? 2000 + +a : +a) : h0.getFullYear();
+  let dt = new Date(ano, m - 1, d);
+  if (m < 1 || m > 12 || d < 1 || dt.getDate() !== d || dt.getMonth() !== m - 1) return { erro: 'essa data não existe no calendário' };
+  const DIA = 86400000;
+  if (dt < h0) {
+    const recente = (h0 - dt) <= 90 * DIA;
+    if (livre && recente) return { data: a ? `${p(d)}/${p(m)}/${ano}` : `${p(d)}/${p(m)}` };   // data passada citada na conversa
+    if (!a) { ano++; dt = new Date(ano, m - 1, d); }                                          // sem ano: é do ano que vem
+    else if (livre) return { data: `${p(d)}/${p(m)}/${ano}` };                                // data antiga citada na conversa
+    else return { erro: 'essa data já passou' };
+  }
   return { data: `${p(d)}/${p(m)}/${ano} (${DIAS_SEMANA_CONF[dt.getDay()]})` };
 }
 function conferirMensagemConfirmacao(texto, hoje) {
   const linhas = String(texto).split('\n');
   const iData = linhas.findIndex(l => /^\s*📅\s*Data:/.test(l));
-  if (iData === -1) return { texto };                 // mensagem comum: não mexe
-  if (/\[DIGITE/i.test(texto)) return { erro: 'Preencha a data e o horário no lugar de [DIGITE ... AQUI] antes de enviar.' };
-  const valor = linhas[iData].replace(/^\s*📅\s*Data:\s*/, '');
-  const res = normalizarDataConfirmacao(valor, hoje);
-  if (res.erro) return { erro: `Data "${valor.trim() || '(vazia)'}": ${res.erro}. A mensagem não foi enviada.` };
-  linhas[iData] = `📅 Data: ${res.data}`;
-  return { texto: linhas.join('\n') };
+  if (iData !== -1) {
+    if (/\[DIGITE/i.test(texto)) return { erro: 'Preencha a data e o horário no lugar de [DIGITE ... AQUI] antes de enviar.' };
+    const valor = linhas[iData].replace(/^\s*📅\s*Data:\s*/, '');
+    const res = normalizarDataConfirmacao(valor, hoje, false);
+    if (res.erro) return { erro: `Data "${valor.trim() || '(vazia)'}": ${res.erro}. A mensagem não foi enviada.` };
+    linhas[iData] = `📅 Data: ${res.data}`;
+  }
+  let erro = null;
+  const SEMANA = /^\s*\((domingo|segunda|terça|quarta|quinta|sexta|sábado)/i;
+  const trocar = (inteiro, prefixo, valor, pos, tudo) => {
+    if (erro) return inteiro;
+    const depois = tudo.slice(pos + inteiro.length);
+    if (SEMANA.test(depois)) return inteiro;                       // já tem o dia da semana
+    const res = normalizarDataConfirmacao(valor, hoje, true);
+    if (res.erro) { erro = `Data "${valor}": ${res.erro}. A mensagem não foi enviada.`; return inteiro; }
+    return prefixo + res.data;
+  };
+  let saida = linhas.map((l, i) => {
+    if (i === iData) return l;
+    // "dia 1212", "data: 21122026", "dia 21-12-2026" (3 dígitos ou mais, ou com separador)
+    l = l.replace(/(\b(?:dia|data)\s*:?\s+)(\d{3,8}|\d{1,2}[\/.\-]\d{1,2}(?:[\/.\-]\d{2,4})?)(?![\d\/.\-]*\d)/gi,
+                  (inteiro, prefixo, valor, pos, tudo) => trocar(inteiro, prefixo, valor, pos, tudo));
+    // "21/12" e "21/12/2026" em qualquer lugar (só com barra, para não confundir com horário e CPF)
+    l = l.replace(/(^|[^\d\/])(\d{1,2}\/\d{1,2}(?:\/\d{4}|\/\d{2})?)(?![\d\/])/g,
+                  (inteiro, prefixo, valor, pos, tudo) => valor.replace(/\D/g, '').length < 3 ? inteiro : trocar(inteiro, prefixo, valor, pos, tudo));
+    return l;
+  }).join('\n');
+  if (erro) return { erro };
+  return { texto: saida };
 }
 
 async function enviarMensagemChat() {
@@ -2018,7 +2048,7 @@ async function enviarMensagemChat() {
   let texto = input.value.trim();
   if (!texto || !_chatTelefone) return;
 
-  // 23/11: confere a data da mensagem de confirmação (ex.: "2112" vira "21/12/2026 (segunda-feira)").
+  // 23/11: confere as datas da mensagem (ex.: "dia 2112" vira "dia 21/12/2026 (segunda-feira)").
   const conferida = conferirMensagemConfirmacao(texto);
   if (conferida.erro) { mostrarToast(conferida.erro, 'erro', 8000); input.focus(); return; }
   texto = conferida.texto;
