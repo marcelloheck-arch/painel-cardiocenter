@@ -1821,11 +1821,11 @@ function fecharModalDetalhe() {
   document.getElementById('modalDetalhe').classList.remove('visivel');
 }
 
-function mostrarToast(msg, tipo) {
+function mostrarToast(msg, tipo, ms) {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.className = 'toast visivel ' + (tipo || '');
-  setTimeout(() => { t.className = 'toast'; }, 3000);
+  setTimeout(() => { t.className = 'toast'; }, ms || 3000);
 }
 
 /* ============================================================
@@ -1973,12 +1973,55 @@ function escaparHtml(texto) {
   return div.innerHTML;
 }
 
+// 23/11: confere a data (e o horário) da mensagem de confirmação antes de enviar.
+// Só age quando a mensagem tem a linha "📅 Data:" do modelo de confirmação.
+// Aceita 21/12/2026, 21/12/26, 21/12, 21-12, 21.12, 2112, 21122026. Devolve a data padronizada
+// com o dia da semana, ou um erro para a atendente corrigir antes do envio.
+const DIAS_SEMANA_CONF = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+function normalizarDataConfirmacao(valor, hoje) {
+  hoje = hoje || new Date();
+  const v = String(valor || '').trim().replace(/\s*\((domingo|segunda|terça|terca|quarta|quinta|sexta|sábado|sabado)[^)]*\)\s*$/i, '');
+  let d, m, a;
+  let r = v.match(/^(\d{1,2})\s*[\/.\-]\s*(\d{1,2})(?:\s*[\/.\-]\s*(\d{2}|\d{4}))?$/);
+  if (r) { d = +r[1]; m = +r[2]; a = r[3]; }
+  else if ((r = v.match(/^(\d{2})(\d{2})(\d{4}|\d{2})?$/))) { d = +r[1]; m = +r[2]; a = r[3]; }
+  else return { erro: 'escreva a data como dia/mês/ano, por exemplo 21/12/2026' };
+  const h0 = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+  let ano;
+  if (a) ano = a.length === 2 ? 2000 + +a : +a;
+  else {
+    ano = h0.getFullYear();
+    if (new Date(ano, m - 1, d) < h0) ano++;          // sem ano e já passou este ano: é do ano que vem
+  }
+  const dt = new Date(ano, m - 1, d);
+  if (m < 1 || m > 12 || dt.getDate() !== d || dt.getMonth() !== m - 1) return { erro: 'essa data não existe no calendário' };
+  if (dt < h0) return { erro: 'essa data já passou' };
+  const p = n => String(n).padStart(2, '0');
+  return { data: `${p(d)}/${p(m)}/${ano} (${DIAS_SEMANA_CONF[dt.getDay()]})` };
+}
+function conferirMensagemConfirmacao(texto, hoje) {
+  const linhas = String(texto).split('\n');
+  const iData = linhas.findIndex(l => /^\s*📅\s*Data:/.test(l));
+  if (iData === -1) return { texto };                 // mensagem comum: não mexe
+  if (/\[DIGITE/i.test(texto)) return { erro: 'Preencha a data e o horário no lugar de [DIGITE ... AQUI] antes de enviar.' };
+  const valor = linhas[iData].replace(/^\s*📅\s*Data:\s*/, '');
+  const res = normalizarDataConfirmacao(valor, hoje);
+  if (res.erro) return { erro: `Data "${valor.trim() || '(vazia)'}": ${res.erro}. A mensagem não foi enviada.` };
+  linhas[iData] = `📅 Data: ${res.data}`;
+  return { texto: linhas.join('\n') };
+}
+
 async function enviarMensagemChat() {
   if (_enviandoMensagem) return;
 
   const input = document.getElementById('chatInput');
-  const texto = input.value.trim();
+  let texto = input.value.trim();
   if (!texto || !_chatTelefone) return;
+
+  // 23/11: confere a data da mensagem de confirmação (ex.: "2112" vira "21/12/2026 (segunda-feira)").
+  const conferida = conferirMensagemConfirmacao(texto);
+  if (conferida.erro) { mostrarToast(conferida.erro, 'erro', 8000); input.focus(); return; }
+  texto = conferida.texto;
 
   _enviandoMensagem = true;
   const atendente = obterAtendenteIdentificada();
