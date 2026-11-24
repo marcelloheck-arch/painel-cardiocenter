@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- DASHBOARD-VERSAO: 2026-11-24-v4 (visao geral sem testes e por tipo; SLA so com card aberto) -->
+<!-- DASHBOARD-VERSAO: 2026-11-24-v5 (horas em servico 24x7) -->
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -579,7 +579,7 @@ function renderizar(d, inicio, fim) {
     <div class="kpis">
       ${kpi('verde', 'i-robo', r.pacientes_atendidos != null ? r.pacientes_atendidos : (r.total_agendamentos || 0), 'Pacientes atendidos', r.pedidos_total != null ? `pelo agente · ${r.pedidos_total} pedidos para a recepção` : 'pelo agente no período')}
       ${kpi('azul', 'i-balao', r.perguntas_respondidas || 0, 'Perguntas respondidas', 'sem intervenção humana')}
-      ${kpi('amarelo', 'i-relogio', tempoStr, 'Tempo trabalhado', '<span title="8 min por pré-agendamento, 4 por remarcação ou cancelamento, 3 por dúvida encaminhada">estimativa por tipo de pedido ⓘ</span>')}
+      ${kpi('amarelo', 'i-relogio', horasFmt(cobertura.total), 'Horas em serviço', `24 h por dia, 7 dias por semana · ${horasFmt(cobertura.fora)} com a clínica fechada`)}
       ${kpi('roxo', 'i-check', r.novos_concluidos != null ? r.novos_concluidos : (r.total_concluidos || 0), 'Agendamentos concluídos', r.novos_total != null ? `de ${r.novos_total} pré-agendamentos · ${r.remarc_cancel_total} remarcações e cancelamentos` : `${r.em_atendimento || 0} em atendimento agora`)}
       ${kpi('vermelho', 'i-fila', r.pendentes || 0, 'Aguardando atendimento', 'na fila atual')}
     </div>
