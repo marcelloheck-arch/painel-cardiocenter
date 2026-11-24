@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- DASHBOARD-VERSAO: 2026-11-24-v5 (horas em servico 24x7) -->
+<!-- DASHBOARD-VERSAO: 2026-11-24-v6 (cores revisadas para daltonismo) -->
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -187,6 +187,8 @@ svg.ic { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-wid
 
 /* RANKING */
 .ranking { display: flex; flex-direction: column; gap: 12px; }
+.ranking-servicos { gap: 14px; padding-top: 6px; }
+.ranking-servicos .ranking-item { grid-template-columns: 24px minmax(120px, 1.6fr) 2fr 40px 48px; }
 .ranking-item { display: grid; grid-template-columns: 24px minmax(110px, 1.1fr) 3fr 44px 48px; align-items: center; gap: 12px; }
 .ranking-pos { font-size: 12px; font-weight: 700; color: var(--texto-suave); text-align: center; }
 .ranking-pos.top { color: var(--branco); background: var(--azul); border-radius: 6px; height: 22px; line-height: 22px; }
@@ -221,7 +223,7 @@ svg.ic { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-wid
 .espera-nome { font-weight: 600; }
 .espera-sub { font-size: 11.5px; color: var(--texto-suave); margin-top: 2px; }
 .motivo { display: inline-block; font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 20px; white-space: nowrap; }
-.motivo.vermelho { background: var(--vermelho-claro); color: var(--vermelho-escuro); }
+.motivo.vermelho { background: #8E2C2A; color: #fff; }
 .motivo.amarelo { background: var(--amarelo-claro); color: #9A6608; }
 .motivo.cinza { background: var(--fundo); color: var(--texto-suave); }
 .espera-vazia { color: var(--verde); font-size: 12.5px; padding: 18px; text-align: center; font-weight: 500; }
@@ -236,7 +238,8 @@ svg.ic { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-wid
 .lem-destaque .det { font-size: 12px; color: var(--texto-suave); margin-top: 6px; }
 .lem-detalhe { padding: 20px 24px; display: flex; flex-direction: column; justify-content: center; gap: 14px; }
 .lem-barra { display: flex; height: 14px; border-radius: 8px; overflow: hidden; background: var(--fundo); }
-.lem-barra span { height: 100%; }
+.lem-barra span { height: 100%; border-right: 2px solid #fff; }
+.lem-barra span:last-child { border-right: none; }
 .lem-legenda { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
 .lem-item { display: flex; gap: 8px; align-items: flex-start; }
 .lem-item i { width: 10px; height: 10px; border-radius: 3px; margin-top: 4px; flex-shrink: 0; }
@@ -442,6 +445,8 @@ let chartServicos = null;
 
 /* Paleta dos gráficos derivada das cores do painel */
 const COR = { marinho: '#0B3A5B', azul: '#1769AA', verde: '#2E9B62', amarelo: '#E9A227', vermelho: '#D9524F', roxo: '#7657C8', texto: '#5F6B76', grade: 'rgba(11,58,91,0.07)' };
+/* 24/11: cores escolhidas para daltonismo: azul, amarelo, vermelho-escuro e cinza têm claridades bem diferentes */
+const COR_LEM = { confirmou: '#1769AA', remarcou: '#E9A227', cancelou: '#8E2C2A', sem: '#D5DDE5' };
 const PALETA = ['#1769AA', '#0B3A5B', '#2E9B62', '#E9A227', '#7657C8', '#D9524F', '#4FA3D9', '#8FB8D6', '#7FC6A0', '#8A97A3'];
 
 function esc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
@@ -577,11 +582,11 @@ function renderizar(d, inicio, fim) {
   const html = `
     <div class="secao"><h2>Visão geral do período</h2></div>
     <div class="kpis">
-      ${kpi('verde', 'i-robo', r.pacientes_atendidos != null ? r.pacientes_atendidos : (r.total_agendamentos || 0), 'Pacientes atendidos', r.pedidos_total != null ? `pelo agente · ${r.pedidos_total} pedidos para a recepção` : 'pelo agente no período')}
+      ${kpi('azul', 'i-robo', r.pacientes_atendidos != null ? r.pacientes_atendidos : (r.total_agendamentos || 0), 'Pacientes atendidos', r.pedidos_total != null ? `pelo agente · ${r.pedidos_total} pedidos para a recepção` : 'pelo agente no período')}
       ${kpi('azul', 'i-balao', r.perguntas_respondidas || 0, 'Perguntas respondidas', 'sem intervenção humana')}
-      ${kpi('amarelo', 'i-relogio', horasFmt(cobertura.total), 'Horas em serviço', `24 h por dia, 7 dias por semana · ${horasFmt(cobertura.fora)} com a clínica fechada`)}
-      ${kpi('roxo', 'i-check', r.novos_concluidos != null ? r.novos_concluidos : (r.total_concluidos || 0), 'Agendamentos concluídos', r.novos_total != null ? `de ${r.novos_total} pré-agendamentos · ${r.remarc_cancel_total} remarcações e cancelamentos` : `${r.em_atendimento || 0} em atendimento agora`)}
-      ${kpi('vermelho', 'i-fila', r.pendentes || 0, 'Aguardando atendimento', 'na fila atual')}
+      ${kpi('azul', 'i-relogio', horasFmt(cobertura.total), 'Horas em serviço', `24 h por dia, 7 dias por semana · ${horasFmt(cobertura.fora)} com a clínica fechada`)}
+      ${kpi('azul', 'i-check', r.novos_concluidos != null ? r.novos_concluidos : (r.total_concluidos || 0), 'Agendamentos concluídos', r.novos_total != null ? `de ${r.novos_total} pré-agendamentos · ${r.remarc_cancel_total} remarcações e cancelamentos` : `${r.em_atendimento || 0} em atendimento agora`)}
+      ${kpi((r.pendentes || 0) > 0 ? 'amarelo' : 'azul', 'i-fila', r.pendentes || 0, 'Aguardando atendimento', 'na fila atual')}
     </div>
 
     ${lem ? `
@@ -594,12 +599,12 @@ function renderizar(d, inicio, fim) {
       </div>
       <div class="lem-detalhe">
         <div class="lem-barra" title="Respostas aos lembretes">
-          ${[[lem.confirmados, 'var(--verde)'], [lem.remarcados, 'var(--roxo)'], [lem.cancelados, 'var(--vermelho)'], [lem.sem_resposta, '#C9D3DC']]
+          ${[[lem.confirmados, COR_LEM.confirmou], [lem.remarcados, COR_LEM.remarcou], [lem.cancelados, COR_LEM.cancelou], [lem.sem_resposta, COR_LEM.sem]]
             .map(([n, cor]) => lem.enviados && n ? `<span style="width:${(n / lem.enviados * 100).toFixed(1)}%;background:${cor}"></span>` : '').join('')}
         </div>
         <div class="lem-legenda">
-          ${[['Confirmaram presença', lem.confirmados, 'var(--verde)'], ['Pediram remarcação', lem.remarcados, 'var(--roxo)'],
-             ['Pediram cancelamento', lem.cancelados, 'var(--vermelho)'], ['Não responderam', lem.sem_resposta, '#C9D3DC']]
+          ${[['Confirmaram presença', lem.confirmados, COR_LEM.confirmou], ['Pediram remarcação', lem.remarcados, COR_LEM.remarcou],
+             ['Pediram cancelamento', lem.cancelados, COR_LEM.cancelou], ['Não responderam', lem.sem_resposta, COR_LEM.sem]]
             .map(([txt, n, cor]) => `<div class="lem-item"><i style="background:${cor}"></i><div><b class="num">${n}</b><span>${txt}${lem.enviados ? ' · ' + (n / lem.enviados * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + '%' : ''}</span></div></div>`).join('')}
         </div>
       </div>
@@ -629,12 +634,12 @@ function renderizar(d, inicio, fim) {
 
     <div class="secao"><h2>Tempo até a primeira resposta da recepção</h2><p>Do pedido do paciente até a primeira mensagem da recepção pelo painel, só no horário da clínica${sla.cards_medidos ? ` · ${sla.cards_medidos} pedidos medidos` : ''}</p></div>
     <div class="card sla">
-      <div class="sla-item"><span class="sla-ponto" style="background:var(--verde)"></span>
-        <div><div class="sla-valor num" style="color:var(--verde)">${(sla.cards_medidos && parseFloat(sla.minimo_minutos) < 1 ? "<1min" : formatarMinutos(sla.minimo_minutos))}</div><div class="sla-label">Mais rápido</div></div></div>
+      <div class="sla-item"><span class="sla-ponto" style="background:var(--azul)"></span>
+        <div><div class="sla-valor num" style="color:var(--marinho)">${(sla.cards_medidos && parseFloat(sla.minimo_minutos) < 1 ? "<1min" : formatarMinutos(sla.minimo_minutos))}</div><div class="sla-label">Mais rápido</div></div></div>
       <div class="sla-item"><span class="sla-ponto" style="background:var(--amarelo)"></span>
-        <div><div class="sla-valor num" style="color:#B87A10">${formatarMinutos(sla.medio_minutos)}</div><div class="sla-label">Tempo médio</div></div></div>
-      <div class="sla-item"><span class="sla-ponto" style="background:var(--vermelho)"></span>
-        <div><div class="sla-valor num" style="color:var(--vermelho)">${formatarMinutos(sla.maximo_minutos)}</div><div class="sla-label">Mais lento${sla.lento_nome ? ` · ${esc(sla.lento_nome)}${sla.lento_quando ? ', ' + esc(sla.lento_quando) : ''}` : ''}</div></div></div>
+        <div><div class="sla-valor num" style="color:var(--marinho)">${formatarMinutos(sla.medio_minutos)}</div><div class="sla-label">Tempo médio</div></div></div>
+      <div class="sla-item"><span class="sla-ponto" style="background:#8E2C2A"></span>
+        <div><div class="sla-valor num" style="color:var(--marinho)">${formatarMinutos(sla.maximo_minutos)}</div><div class="sla-label">Mais lento${sla.lento_nome ? ` · ${esc(sla.lento_nome)}${sla.lento_quando ? ', ' + esc(sla.lento_quando) : ''}` : ''}</div></div></div>
     </div>
 
     <div class="secao"><h2>Fila de espera agora</h2><p>Tempo real, contado no horário da clínica</p></div>
@@ -661,8 +666,8 @@ function renderizar(d, inicio, fim) {
       </div>
       <div class="card grafico-card">
         <div class="grafico-titulo">Serviços mais solicitados</div>
-        <div class="grafico-sub">Distribuição por tipo de exame ou consulta</div>
-        <div class="grafico-area"><canvas id="chartServicos"></canvas></div>
+        <div class="grafico-sub">Pré-agendamentos por tipo de exame ou consulta</div>
+        <div class="ranking ranking-servicos" id="rankingServicos"></div>
       </div>
     </div>
 
@@ -687,9 +692,9 @@ function renderizar(d, inicio, fim) {
   }
   function estiloTempo(min) {
     min = parseInt(min) || 0;
-    if (min >= 120) return 'background:var(--vermelho-claro);color:var(--vermelho-escuro)';
+    if (min >= 120) return 'background:#8E2C2A;color:#fff';
     if (min >= 30) return 'background:var(--amarelo-claro);color:#9A6608';
-    return 'background:var(--verde-claro);color:var(--verde)';
+    return 'background:var(--azul-claro);color:var(--azul)';
   }
   const TIPOS = { novo: 'Agendamento', remarcacao: 'Reagendamento', cancelamento: 'Cancelamento', duvida_valor: 'Dúvida', documento: 'Documentos recebidos' };
   function renderFila(lista, elId, vazio) {
@@ -780,32 +785,19 @@ function renderizar(d, inicio, fim) {
     }
   });
 
-  // Gráfico de serviços
-  if (chartServicos) chartServicos.destroy();
-  chartServicos = new Chart(document.getElementById('chartServicos'), {
-    type: 'doughnut',
-    data: {
-      labels: servicos.map(s => s.servico),
-      datasets: [{
-        data: servicos.map(s => s.total),
-        backgroundColor: PALETA,
-        borderColor: '#FFFFFF',
-        borderWidth: 2,
-        hoverOffset: 6
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      cutout: '62%',
-      plugins: {
-        legend: {
-          position: window.innerWidth < 640 ? 'bottom' : 'right',
-          labels: { font: { size: 11 }, boxWidth: 10, boxHeight: 10, usePointStyle: true, pointStyle: 'circle', padding: 12 }
-        },
-        tooltip: { backgroundColor: COR.marinho, padding: 10 }
-      }
-    }
-  });
+  // Serviços: barras em ranking (24/11, no lugar da rosca colorida, mais fácil de ler e acessível)
+  const servEl = document.getElementById('rankingServicos');
+  const totServ = servicos.reduce((t, s) => t + (parseInt(s.total) || 0), 0);
+  const maxServ = servicos.length ? Math.max(...servicos.map(s => parseInt(s.total) || 0)) : 1;
+  servEl.innerHTML = !servicos.length ? '<div class="fila-vazia">Nenhum dado no período</div>' :
+    servicos.slice(0, 8).map((sv, i) => `
+      <div class="ranking-item">
+        <div class="ranking-pos ${i < 3 ? 'top' : ''}">${i + 1}</div>
+        <div class="ranking-nome" title="${esc(sv.servico)}">${esc(sv.servico)}</div>
+        <div class="ranking-trilho"><div class="ranking-barra" style="width:${((parseInt(sv.total) || 0) / maxServ * 100).toFixed(0)}%;background:${i === 0 ? COR.marinho : COR.azul};opacity:${Math.max(0.45, 1 - i * 0.08)}"></div></div>
+        <div class="ranking-total num">${sv.total}</div>
+        <div class="ranking-pct num">${totServ ? ((parseInt(sv.total) || 0) / totServ * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) : 0}%</div>
+      </div>`).join('');
 
   // Ranking de convênios
   const maxConvenio = convenios.length > 0 ? convenios[0].total : 1;
