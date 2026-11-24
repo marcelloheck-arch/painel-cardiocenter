@@ -1362,8 +1362,13 @@ function renderizarKanban() {
 
   const buscaInput = document.getElementById('buscaConcluido');
   const termoBusca = buscaInput ? buscaInput.value.trim().toLowerCase() : '';
+  // 24/11: a busca também encontra as dúvidas concluídas (que não aparecem na lista padrão),
+  // para achar no painel qualquer nome que apareça no dashboard.
+  const concluidosBusca = todosAgendamentos
+    .filter(a => a.status === 'concluido')
+    .sort((a, b) => new Date(b.updated_at || b.created_at) - new Date(a.updated_at || a.created_at));
   const concluidosParaMostrar = termoBusca
-    ? concluidosTodos.filter(a => {
+    ? concluidosBusca.filter(a => {
         const nome = (a.nome || '').toLowerCase();
         const dataRef = a.updated_at || a.created_at;
         const dataBR = dataRef ? new Date(dataRef).toLocaleDateString('pt-BR') : '';
@@ -1431,7 +1436,7 @@ function criarCard(a) {
     concluido: 'Concluído'
   };
 
-  const tipoLabels = { cancelamento: '<span class="icone-inline"><svg class="icone-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg></span> Cancelamento', remarcacao: '<span class="icone-inline"><svg class="icone-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11A8 8 0 0 0 6.3 6.3L4 8.6"/><path d="M4 4v4.6h4.6"/><path d="M4 13a8 8 0 0 0 13.7 4.7l2.3-2.3"/><path d="M20 20v-4.6h-4.6"/></svg></span> Remarcação' };
+  const tipoLabels = { duvida_valor: 'Dúvida', cancelamento: '<span class="icone-inline"><svg class="icone-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg></span> Cancelamento', remarcacao: '<span class="icone-inline"><svg class="icone-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11A8 8 0 0 0 6.3 6.3L4 8.6"/><path d="M4 4v4.6h4.6"/><path d="M4 13a8 8 0 0 0 13.7 4.7l2.3-2.3"/><path d="M20 20v-4.6h-4.6"/></svg></span> Remarcação' };
   const tipoTagHTML = (tipo !== 'novo')
     ? `<div class="tipo-tag ${tipo}">${tipoLabels[tipo] || tipo}</div>`
     : '';
@@ -1500,6 +1505,17 @@ function criarCard(a) {
           <div class="campo-label">E-mail</div>
           <div class="campo-valor">${a.email || '—'}</div>
         </div>`;
+  } else if (tipo === 'duvida_valor') {
+    // 24/11: dúvida concluída (aparece na busca do Concluído)
+    corpoHTML = `
+        <div class="campo full">
+          <div class="campo-label">Pergunta</div>
+          <div class="campo-valor">${a.pergunta || '—'}</div>
+        </div>
+        <div class="campo full">
+          <div class="campo-label">Telefone</div>
+          <div class="campo-valor">${telExibe(a)}</div>
+        </div>`;
   } else {
     corpoHTML = `
         <div class="campo full">
@@ -1523,7 +1539,7 @@ function criarCard(a) {
           <div class="campo-valor">${a.atendente || '—'}</div>
         </div>`;
 
-  const subInfo = tipo === 'novo' ? (a.servico || 'Serviço não informado') : (tipo === 'cancelamento' ? 'Cancelamento' : 'Remarcação');
+  const subInfo = tipo === 'novo' ? (a.servico || 'Serviço não informado') : (tipo === 'cancelamento' ? 'Cancelamento' : (tipo === 'duvida_valor' ? 'Dúvida' : 'Remarcação'));
   const aberta = filaAberta === a.id;
 
   return `
