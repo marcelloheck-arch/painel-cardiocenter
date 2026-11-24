@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- DASHBOARD-VERSAO: 2026-11-09-visual-painel (cores do painel de agendamentos e lembretes) -->
+<!-- DASHBOARD-VERSAO: 2026-11-24-economia (valor economizado com o agente) -->
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -196,6 +196,21 @@ svg.ic { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-wid
 .ranking-total { font-size: 13px; font-weight: 700; text-align: right; }
 .ranking-pct { font-size: 12px; color: var(--texto-suave); text-align: right; }
 
+
+/* ECONOMIA */
+.economia { display: grid; grid-template-columns: 1.1fr 1.4fr; gap: 0; }
+.eco-destaque { padding: 22px 24px; background: var(--verde-claro); border-radius: var(--raio) 0 0 var(--raio); display: flex; flex-direction: column; justify-content: center; }
+.eco-destaque .rot { font-size: 12.5px; font-weight: 600; color: var(--verde); }
+.eco-destaque .val { font-size: 34px; font-weight: 800; letter-spacing: -1px; color: #1F6E45; margin-top: 6px; }
+.eco-destaque .det { font-size: 12px; color: var(--texto-suave); margin-top: 8px; line-height: 1.5; }
+.eco-conta { padding: 18px 24px; display: flex; flex-direction: column; gap: 8px; }
+.eco-linha { display: flex; justify-content: space-between; gap: 12px; font-size: 12.5px; color: var(--texto-suave); border-bottom: 1px dashed var(--borda); padding-bottom: 7px; }
+.eco-linha b { color: var(--texto); font-weight: 600; white-space: nowrap; }
+.eco-linha.total { border-bottom: none; font-size: 13px; }
+.eco-linha.total b { color: var(--verde); font-weight: 800; }
+.eco-nota { font-size: 11px; color: var(--texto-suave); line-height: 1.5; margin-top: 4px; }
+@media (max-width: 900px) { .economia { grid-template-columns: 1fr; } .eco-destaque { border-radius: var(--raio) var(--raio) 0 0; } }
+
 /* ESTADOS */
 .estado-vazio { text-align: center; padding: 90px 20px; color: var(--texto-suave); }
 .estado-vazio .icone { width: 56px; height: 56px; border-radius: 14px; background: var(--azul-claro); color: var(--azul); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px; }
@@ -341,6 +356,29 @@ function confirmarToken() {
 }
 function tokenInputTeclado(ev) { if (ev.key === 'Enter') { ev.preventDefault(); confirmarToken(); } }
 
+
+/* ===== Custo de uma recepcionista (para o cálculo do valor economizado) =====
+   Fontes (pesquisa de 24/11/2026):
+   - salário: média de recepcionista de consultório médico em Florianópolis, R$ 2.200,47 (salario.com.br, nov/2026, 42 h/semana);
+   - piso estadual de SC 2026 para estabelecimentos de saúde (4ª faixa, LC 895/2026): R$ 2.106,00.
+   Encargos de empresa fora do Simples Nacional. Benefícios (vale-transporte, refeição, plano) NÃO entram: conta conservadora. */
+const RECEPCIONISTA = {
+  salario: 2200.47,
+  horasMes: 220,               // 44 h/semana (CLT)
+  decimoTerceiro: 1 / 12,
+  feriasUmTerco: (4 / 3) / 12,
+  fgts: 0.08,
+  inssPatronal: 0.278          // INSS 20% + RAT 2% + terceiros 5,8%
+};
+function custoRecepcionista() {
+  const r = RECEPCIONISTA;
+  const remuneracao = r.salario * (1 + r.decimoTerceiro + r.feriasUmTerco);
+  const encargos = remuneracao * (r.fgts + r.inssPatronal);
+  const mensal = remuneracao + encargos;
+  return { mensal, encargos, remuneracao, hora: mensal / r.horasMes };
+}
+function brl(v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }); }
+
 let chartHorarios = null;
 let chartServicos = null;
 
@@ -456,6 +494,11 @@ function renderizar(d, inicio, fim) {
     ? `${r.tempo_agente_horas}h ${r.tempo_agente_minutos}min`
     : `${r.tempo_agente_minutos || 0}min`;
 
+  // Valor economizado: horas trabalhadas pelo agente × custo por hora de uma recepcionista
+  const horasAgente = (parseFloat(r.tempo_agente_horas) || 0) + (parseFloat(r.tempo_agente_minutos) || 0) / 60;
+  const custo = custoRecepcionista();
+  const eco = { custo, valor: horasAgente * custo.hora, cobertura247: custo.mensal * (168 / 44) };
+
   const kpi = (cor, ic, valor, label, detalhe) => `
       <div class="card kpi ${cor}">
         <div class="kpi-topo"><span class="kpi-label">${label}</span><span class="kpi-icone">${icone(ic)}</span></div>
@@ -471,6 +514,24 @@ function renderizar(d, inicio, fim) {
       ${kpi('amarelo', 'i-relogio', tempoStr, 'Tempo trabalhado', 'estimativa do agente')}
       ${kpi('roxo', 'i-check', r.total_concluidos || 0, 'Agendamentos concluídos', `${r.em_atendimento || 0} em atendimento agora`)}
       ${kpi('vermelho', 'i-fila', r.pendentes || 0, 'Aguardando atendimento', 'na fila atual')}
+    </div>
+
+    <div class="secao"><h2>Economia com o agente</h2><p>Comparado a pagar uma recepcionista pelas mesmas horas</p></div>
+    <div class="card economia">
+      <div class="eco-destaque">
+        <span class="rot">Valor economizado no período</span>
+        <span class="val num">${brl(eco.valor)}</span>
+        <span class="det">${tempoStr} de trabalho do agente, que atende 24 horas por dia, 7 dias por semana.<br>Para cobrir 24 h todos os dias com pessoas seriam cerca de 4 recepcionistas: ${brl(eco.cobertura247)} por mês.</span>
+      </div>
+      <div class="eco-conta">
+        <div class="eco-linha"><span>Salário de recepcionista com experiência (média em Florianópolis)</span><b class="num">${brl(RECEPCIONISTA.salario)}</b></div>
+        <div class="eco-linha"><span>13º e férias + 1/3 (proporcionais por mês)</span><b class="num">${brl(eco.custo.remuneracao - RECEPCIONISTA.salario)}</b></div>
+        <div class="eco-linha"><span>FGTS 8% + INSS patronal, RAT e terceiros (27,8%)</span><b class="num">${brl(eco.custo.encargos)}</b></div>
+        <div class="eco-linha"><span>Custo mensal para a clínica</span><b class="num">${brl(eco.custo.mensal)}</b></div>
+        <div class="eco-linha"><span>Custo por hora (220 h/mês)</span><b class="num">${eco.custo.hora.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</b></div>
+        <div class="eco-linha total"><span>Horas do agente × custo por hora</span><b class="num">${brl(eco.valor)}</b></div>
+        <div class="eco-nota">Conta conservadora: não inclui vale-transporte, vale-refeição, plano de saúde nem adicional noturno. Piso estadual de SC para saúde em 2026: R$ 2.106,00.</div>
+      </div>
     </div>
 
     <div class="secao"><h2>Tempo até a recepção assumir</h2><p>SLA de atendimento no período</p></div>
