@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- DASHBOARD-VERSAO: 2026-11-24-custo-agente-primeira-resposta (SLA em horario util, espera longa com motivo e valor economizado) -->
+<!-- DASHBOARD-VERSAO: 2026-11-24-lembretes (taxa de resposta aos lembretes) -->
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -226,6 +226,24 @@ svg.ic { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-wid
 .motivo.cinza { background: var(--fundo); color: var(--texto-suave); }
 .espera-vazia { color: var(--verde); font-size: 12.5px; padding: 18px; text-align: center; font-weight: 500; }
 @media (max-width: 640px) { .espera-tabela { min-width: 0; } .espera-tabela thead { display: none; } .espera-tabela tr { display: block; padding: 10px 14px; border-bottom: 1px solid var(--borda); } .espera-tabela td { display: block; padding: 3px 0; border: none; } .espera-tabela td[data-l]::before { content: attr(data-l); font-size: 11.5px; color: var(--texto-suave); margin-right: 4px; } }
+
+
+/* LEMBRETES */
+.lembretes { display: grid; grid-template-columns: 0.9fr 2fr; }
+.lem-destaque { padding: 22px 24px; border-right: 1px solid var(--borda); display: flex; flex-direction: column; justify-content: center; }
+.lem-destaque .rot { font-size: 12.5px; font-weight: 600; color: var(--texto-suave); }
+.lem-destaque .val { font-size: 38px; font-weight: 800; letter-spacing: -1px; color: var(--azul); margin-top: 4px; }
+.lem-destaque .det { font-size: 12px; color: var(--texto-suave); margin-top: 6px; }
+.lem-detalhe { padding: 20px 24px; display: flex; flex-direction: column; justify-content: center; gap: 14px; }
+.lem-barra { display: flex; height: 14px; border-radius: 8px; overflow: hidden; background: var(--fundo); }
+.lem-barra span { height: 100%; }
+.lem-legenda { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.lem-item { display: flex; gap: 8px; align-items: flex-start; }
+.lem-item i { width: 10px; height: 10px; border-radius: 3px; margin-top: 4px; flex-shrink: 0; }
+.lem-item b { display: block; font-size: 16px; font-weight: 700; }
+.lem-item span { font-size: 11.5px; color: var(--texto-suave); }
+@media (max-width: 900px) { .lembretes { grid-template-columns: 1fr; } .lem-destaque { border-right: none; border-bottom: 1px solid var(--borda); } }
+@media (max-width: 640px) { .lem-legenda { grid-template-columns: 1fr 1fr; } }
 
 /* ESTADOS */
 .estado-vazio { text-align: center; padding: 90px 20px; color: var(--texto-suave); }
@@ -523,6 +541,7 @@ function renderizar(d, inicio, fim) {
   const filaAguardando = d.fila_aguardando || [];
   const filaEmAtendimento = d.fila_em_atendimento || [];
   const esperaLonga = d.espera_longa || [];
+  const lem = d.lembretes || null;
   const limiteEspera = d.limite_espera_minutos || 30;
 
   // Tag de período
@@ -564,6 +583,28 @@ function renderizar(d, inicio, fim) {
       ${kpi('roxo', 'i-check', r.total_concluidos || 0, 'Agendamentos concluídos', `${r.em_atendimento || 0} em atendimento agora`)}
       ${kpi('vermelho', 'i-fila', r.pendentes || 0, 'Aguardando atendimento', 'na fila atual')}
     </div>
+
+    ${lem ? `
+    <div class="secao"><h2>Lembretes de consulta</h2><p>Lembretes enviados no período e quantos pacientes responderam</p></div>
+    <div class="card lembretes">
+      <div class="lem-destaque">
+        <span class="rot">Responderam ao lembrete</span>
+        <span class="val num">${lem.enviados ? lem.taxa_resposta.toLocaleString('pt-BR') + '%' : '—'}</span>
+        <span class="det num">${lem.responderam} de ${lem.enviados} lembretes enviados</span>
+      </div>
+      <div class="lem-detalhe">
+        <div class="lem-barra" title="Respostas aos lembretes">
+          ${[[lem.confirmados, 'var(--verde)'], [lem.remarcados, 'var(--roxo)'], [lem.cancelados, 'var(--vermelho)'], [lem.sem_resposta, '#C9D3DC']]
+            .map(([n, cor]) => lem.enviados && n ? `<span style="width:${(n / lem.enviados * 100).toFixed(1)}%;background:${cor}"></span>` : '').join('')}
+        </div>
+        <div class="lem-legenda">
+          ${[['Confirmaram presença', lem.confirmados, 'var(--verde)'], ['Pediram remarcação', lem.remarcados, 'var(--roxo)'],
+             ['Pediram cancelamento', lem.cancelados, 'var(--vermelho)'], ['Não responderam', lem.sem_resposta, '#C9D3DC']]
+            .map(([txt, n, cor]) => `<div class="lem-item"><i style="background:${cor}"></i><div><b class="num">${n}</b><span>${txt}${lem.enviados ? ' · ' + (n / lem.enviados * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + '%' : ''}</span></div></div>`).join('')}
+        </div>
+      </div>
+    </div>
+    ` : ''}
 
     <div class="secao"><h2>Economia com o agente</h2><p>O agente atende quando a clínica está fechada: noites e fins de semana</p></div>
     <div class="card economia">
