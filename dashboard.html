@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- DASHBOARD-VERSAO: 2026-11-24-economia-fora-expediente (SLA em horario util, espera longa com motivo e valor economizado) -->
+<!-- DASHBOARD-VERSAO: 2026-11-24-custo-agente-primeira-resposta (SLA em horario util, espera longa com motivo e valor economizado) -->
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -378,9 +378,14 @@ function tokenInputTeclado(ev) { if (ev.key === 'Enter') { ev.preventDefault(); 
    - salário: média de recepcionista de consultório médico em Florianópolis, R$ 2.200,47 (salario.com.br, nov/2026, 42 h/semana);
    - piso estadual de SC 2026 para estabelecimentos de saúde (4ª faixa, LC 895/2026): R$ 2.106,00.
    Encargos de empresa fora do Simples Nacional. Benefícios (vale-transporte, refeição, plano) NÃO entram: conta conservadora. */
+/* Quanto a clínica paga pelo sistema (agente de agendamento + lembretes + painel + suporte), por mês.
+   Ajuste aqui se o valor mudar. No período escolhido, o valor é proporcional às horas do período. */
+const MENSALIDADE_AGENTE = 1200;
+const HORAS_MES_MEDIO = 730; // 365 dias × 24 h ÷ 12
+
 const RECEPCIONISTA = {
   salario: 2200.47,
-  horasMes: 220,               // 44 h/semana (CLT)
+  horasMes: 220,               // 44 h/semana (CLT): seg a qui 07:30-17:30 com 1 h de almoço (9 h) + sex 07:30-16:30 (8 h)
   decimoTerceiro: 1 / 12,
   feriasUmTerco: (4 / 3) / 12,
   fgts: 0.08,
@@ -537,7 +542,10 @@ function renderizar(d, inicio, fim) {
   const fimPeriodo = new Date(Math.min(new Date(fim.slice(0, 10) + 'T23:59:59'), new Date()));
   const cobertura = horasForaExpediente(iniPeriodo, fimPeriodo);
   const custo = custoRecepcionista();
-  const eco = { custo, horas: cobertura.fora, valor: cobertura.fora * custo.hora };
+  const custoAgente = MENSALIDADE_AGENTE * (cobertura.total / HORAS_MES_MEDIO);
+  const valorRecep = cobertura.fora * custo.hora;
+  const eco = { custo, horas: cobertura.fora, valor: valorRecep, agente: custoAgente, liquido: valorRecep - custoAgente,
+                retorno: custoAgente > 0 ? valorRecep / custoAgente : 0 };
   const horasFmt = h => { const t = Math.round(h * 60); return `${Math.floor(t / 60)}h${t % 60 ? ' ' + (t % 60) + 'min' : ''}`; };
 
   const kpi = (cor, ic, valor, label, detalhe) => `
@@ -560,9 +568,9 @@ function renderizar(d, inicio, fim) {
     <div class="secao"><h2>Economia com o agente</h2><p>O agente atende quando a clínica está fechada: noites e fins de semana</p></div>
     <div class="card economia">
       <div class="eco-destaque">
-        <span class="rot">Valor economizado no período</span>
-        <span class="val num">${brl(eco.valor)}</span>
-        <span class="det">${horasFmt(eco.horas)} com a clínica fechada no período, em que o agente atendeu sozinho.<br>É quanto custaria ter uma recepcionista no WhatsApp nesses horários.</span>
+        <span class="rot">Economia no período</span>
+        <span class="val num">${brl(eco.liquido)}</span>
+        <span class="det">Uma recepcionista no WhatsApp com a clínica fechada (${horasFmt(eco.horas)}) custaria <b>${brl(eco.valor)}</b>. O agente custou <b>${brl(eco.agente)}</b> no mesmo período.<br>Cada R$ 1 investido no agente evita cerca de <b>R$ ${eco.retorno.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}</b> em salário e encargos.</span>
       </div>
       <div class="eco-conta">
         <div class="eco-linha"><span>Salário de recepcionista com experiência (média em Florianópolis)</span><b class="num">${brl(RECEPCIONISTA.salario)}</b></div>
@@ -571,19 +579,21 @@ function renderizar(d, inicio, fim) {
         <div class="eco-linha"><span>Custo mensal para a clínica</span><b class="num">${brl(eco.custo.mensal)}</b></div>
         <div class="eco-linha"><span>Custo por hora (220 h/mês)</span><b class="num">${eco.custo.hora.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</b></div>
         <div class="eco-linha"><span>Horas com a clínica fechada no período</span><b class="num">${horasFmt(eco.horas)}</b></div>
-        <div class="eco-linha total"><span>Horas com a clínica fechada × custo por hora</span><b class="num">${brl(eco.valor)}</b></div>
-        <div class="eco-nota">Horário da clínica: seg a qui 7h30 às 17h30, sex 7h30 às 16h30. Conta conservadora: não inclui vale-transporte, vale-refeição, plano de saúde nem adicional noturno. Piso estadual de SC para saúde em 2026: R$ 2.106,00.</div>
+        <div class="eco-linha"><span>Horas com a clínica fechada × custo por hora</span><b class="num">${brl(eco.valor)}</b></div>
+        <div class="eco-linha"><span>Custo do agente no período (R$ ${MENSALIDADE_AGENTE.toLocaleString('pt-BR')}/mês: agendamento, lembretes, painel e suporte)</span><b class="num">− ${brl(eco.agente)}</b></div>
+        <div class="eco-linha total"><span>Economia no período</span><b class="num">${brl(eco.liquido)}</b></div>
+        <div class="eco-nota">Horário da clínica: seg a qui 7h30 às 17h30, sex 7h30 às 16h30; fechada sábado e domingo. Jornada da recepcionista: 44 h por semana (1 h de almoço por dia), 220 h por mês. Conta conservadora: não inclui vale-transporte, vale-refeição, plano de saúde nem adicional noturno. Piso estadual de SC para saúde em 2026: R$ 2.106,00.</div>
       </div>
     </div>
 
-    <div class="secao"><h2>Tempo até a recepção assumir</h2><p>Contado só no horário da clínica: seg a qui, 7h30 às 17h30; sex, 7h30 às 16h30</p></div>
+    <div class="secao"><h2>Tempo até a primeira resposta da recepção</h2><p>Do pedido do paciente até a primeira mensagem da recepção pelo painel, só no horário da clínica${sla.cards_medidos ? ` · ${sla.cards_medidos} pedidos medidos` : ''}</p></div>
     <div class="card sla">
       <div class="sla-item"><span class="sla-ponto" style="background:var(--verde)"></span>
         <div><div class="sla-valor num" style="color:var(--verde)">${formatarMinutos(sla.minimo_minutos)}</div><div class="sla-label">Mais rápido</div></div></div>
       <div class="sla-item"><span class="sla-ponto" style="background:var(--amarelo)"></span>
         <div><div class="sla-valor num" style="color:#B87A10">${formatarMinutos(sla.medio_minutos)}</div><div class="sla-label">Tempo médio</div></div></div>
       <div class="sla-item"><span class="sla-ponto" style="background:var(--vermelho)"></span>
-        <div><div class="sla-valor num" style="color:var(--vermelho)">${formatarMinutos(sla.maximo_minutos)}</div><div class="sla-label">Mais lento</div></div></div>
+        <div><div class="sla-valor num" style="color:var(--vermelho)">${formatarMinutos(sla.maximo_minutos)}</div><div class="sla-label">Mais lento${sla.lento_nome ? ` · ${esc(sla.lento_nome)}${sla.lento_quando ? ', ' + esc(sla.lento_quando) : ''}` : ''}</div></div></div>
     </div>
 
     <div class="secao"><h2>Fila de espera agora</h2><p>Tempo real, contado no horário da clínica</p></div>
