@@ -630,7 +630,7 @@ function renderizar(d, inicio, fim) {
     <div class="secao"><h2>Tempo até a primeira resposta da recepção</h2><p>Do pedido do paciente até a primeira mensagem da recepção pelo painel, só no horário da clínica${sla.cards_medidos ? ` · ${sla.cards_medidos} pedidos medidos` : ''}</p></div>
     <div class="card sla">
       <div class="sla-item"><span class="sla-ponto" style="background:var(--verde)"></span>
-        <div><div class="sla-valor num" style="color:var(--verde)">${formatarMinutos(sla.minimo_minutos)}</div><div class="sla-label">Mais rápido</div></div></div>
+        <div><div class="sla-valor num" style="color:var(--verde)">${(sla.cards_medidos && parseFloat(sla.minimo_minutos) < 1 ? "<1min" : formatarMinutos(sla.minimo_minutos))}</div><div class="sla-label">Mais rápido</div></div></div>
       <div class="sla-item"><span class="sla-ponto" style="background:var(--amarelo)"></span>
         <div><div class="sla-valor num" style="color:#B87A10">${formatarMinutos(sla.medio_minutos)}</div><div class="sla-label">Tempo médio</div></div></div>
       <div class="sla-item"><span class="sla-ponto" style="background:var(--vermelho)"></span>
