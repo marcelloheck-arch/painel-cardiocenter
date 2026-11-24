@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- DASHBOARD-VERSAO: 2026-11-24-economia (valor economizado com o agente) -->
+<!-- DASHBOARD-VERSAO: 2026-11-24-horario-util (SLA em horario util, espera longa com motivo e valor economizado) -->
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -210,6 +210,22 @@ svg.ic { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-wid
 .eco-linha.total b { color: var(--verde); font-weight: 800; }
 .eco-nota { font-size: 11px; color: var(--texto-suave); line-height: 1.5; margin-top: 4px; }
 @media (max-width: 900px) { .economia { grid-template-columns: 1fr; } .eco-destaque { border-radius: var(--raio) var(--raio) 0 0; } }
+
+
+/* ESPERA LONGA */
+.espera-card { padding: 6px 0; overflow-x: auto; }
+.espera-tabela { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 720px; }
+.espera-tabela th { text-align: left; font-size: 11px; font-weight: 600; color: var(--texto-suave); text-transform: uppercase; letter-spacing: .4px; padding: 10px 16px; border-bottom: 1px solid var(--borda); }
+.espera-tabela td { padding: 11px 16px; border-bottom: 1px solid var(--borda); vertical-align: middle; }
+.espera-tabela tr:last-child td { border-bottom: none; }
+.espera-nome { font-weight: 600; }
+.espera-sub { font-size: 11.5px; color: var(--texto-suave); margin-top: 2px; }
+.motivo { display: inline-block; font-size: 11.5px; font-weight: 600; padding: 4px 10px; border-radius: 20px; white-space: nowrap; }
+.motivo.vermelho { background: var(--vermelho-claro); color: var(--vermelho-escuro); }
+.motivo.amarelo { background: var(--amarelo-claro); color: #9A6608; }
+.motivo.cinza { background: var(--fundo); color: var(--texto-suave); }
+.espera-vazia { color: var(--verde); font-size: 12.5px; padding: 18px; text-align: center; font-weight: 500; }
+@media (max-width: 640px) { .espera-tabela { min-width: 0; } .espera-tabela thead { display: none; } .espera-tabela tr { display: block; padding: 10px 14px; border-bottom: 1px solid var(--borda); } .espera-tabela td { display: block; padding: 3px 0; border: none; } .espera-tabela td[data-l]::before { content: attr(data-l); font-size: 11.5px; color: var(--texto-suave); margin-right: 4px; } }
 
 /* ESTADOS */
 .estado-vazio { text-align: center; padding: 90px 20px; color: var(--texto-suave); }
@@ -482,6 +498,8 @@ function renderizar(d, inicio, fim) {
   const servicos = d.servicos || [];
   const filaAguardando = d.fila_aguardando || [];
   const filaEmAtendimento = d.fila_em_atendimento || [];
+  const esperaLonga = d.espera_longa || [];
+  const limiteEspera = d.limite_espera_minutos || 30;
 
   // Tag de período
   const ini = new Date(inicio + 'T00:00:00').toLocaleDateString('pt-BR');
@@ -534,7 +552,7 @@ function renderizar(d, inicio, fim) {
       </div>
     </div>
 
-    <div class="secao"><h2>Tempo até a recepção assumir</h2><p>SLA de atendimento no período</p></div>
+    <div class="secao"><h2>Tempo até a recepção assumir</h2><p>Contado só no horário da clínica: seg a qui, 7h30 às 17h30; sex, 7h30 às 16h30</p></div>
     <div class="card sla">
       <div class="sla-item"><span class="sla-ponto" style="background:var(--verde)"></span>
         <div><div class="sla-valor num" style="color:var(--verde)">${formatarMinutos(sla.minimo_minutos)}</div><div class="sla-label">Mais rápido</div></div></div>
@@ -544,7 +562,7 @@ function renderizar(d, inicio, fim) {
         <div><div class="sla-valor num" style="color:var(--vermelho)">${formatarMinutos(sla.maximo_minutos)}</div><div class="sla-label">Mais lento</div></div></div>
     </div>
 
-    <div class="secao"><h2>Fila de espera agora</h2><p>Tempo real, não depende do período escolhido</p></div>
+    <div class="secao"><h2>Fila de espera agora</h2><p>Tempo real, contado no horário da clínica</p></div>
     <div class="fila-colunas">
       <div class="card fila-card">
         <div class="fila-titulo"><strong><i></i>Aguardando</strong><span class="fila-contador num" id="fila-aguardando-count">0</span></div>
@@ -555,6 +573,9 @@ function renderizar(d, inicio, fim) {
         <div id="fila-atendimento-lista"></div>
       </div>
     </div>
+
+    <div class="secao"><h2>Esperando há muito tempo</h2><p>Pedidos parados há ${limiteEspera} min ou mais no horário da clínica, com o motivo</p></div>
+    <div class="card espera-card" id="espera-longa"></div>
 
     <div class="secao"><h2>Distribuição e horários</h2></div>
     <div class="graficos">
@@ -616,6 +637,36 @@ function renderizar(d, inicio, fim) {
   document.getElementById('fila-atendimento-count').textContent = filaEmAtendimento.length;
   renderFila(filaAguardando, 'fila-aguardando-lista', 'Ninguém aguardando no momento');
   renderFila(filaEmAtendimento, 'fila-atendimento-lista', 'Nenhum atendimento em andamento');
+
+  // Esperando há muito tempo, com o motivo
+  const MOTIVOS = {
+    ninguem_assumiu:        ['Ninguém assumiu o pedido', 'vermelho'],
+    recepcao_nao_respondeu: ['Paciente escreveu e a recepção não respondeu', 'vermelho'],
+    assumido_sem_contato:   ['Assumido, mas ninguém falou com o paciente', 'vermelho'],
+    aguardando_paciente:    ['Recepção respondeu e aguarda o paciente', 'amarelo']
+  };
+  function formatarTelefone(t) {
+    const d = String(t || '').replace(/\D/g, '').replace(/^55/, '');
+    if (d.length === 11) return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+    if (d.length === 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+    return d.length > 11 ? 'Número oculto pelo WhatsApp' : (t || '');
+  }
+  const elEspera = document.getElementById('espera-longa');
+  if (!esperaLonga.length) {
+    elEspera.innerHTML = `<div class="espera-vazia">Nenhum pedido parado há ${limiteEspera} min ou mais. Tudo em dia.</div>`;
+  } else {
+    elEspera.innerHTML = `<table class="espera-tabela">
+      <thead><tr><th>Paciente</th><th>Pedido</th><th>Motivo da demora</th><th>Parado há</th><th>Na fila há</th></tr></thead>
+      <tbody>${esperaLonga.map(p => {
+        const [txt, cor] = MOTIVOS[p.motivo] || ['Sem informação', 'cinza'];
+        return `<tr>
+          <td><div class="espera-nome">${esc(p.nome || '—')}</div><div class="espera-sub num">${esc(formatarTelefone(p.telefone))}</div></td>
+          <td>${esc(TIPOS[p.tipo || 'novo'] || p.tipo)}<div class="espera-sub">${p.atendente ? 'com ' + esc(p.atendente) : 'sem atendente'}</div></td>
+          <td><span class="motivo ${cor}">${txt}</span></td>
+          <td data-l="Parado há "><span class="fila-tempo num" style="${estiloTempo(p.minutos_parado)}">${formatarEspera(p.minutos_parado)}</span></td>
+          <td class="num" data-l="Na fila há ">${formatarEspera(p.minutos)}</td>
+        </tr>`; }).join('')}</tbody></table>`;
+  }
 
   Chart.defaults.font.family = "'Inter', sans-serif";
   Chart.defaults.color = COR.texto;
