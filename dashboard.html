@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- DASHBOARD-VERSAO: 2026-11-24-horario-util (SLA em horario util, espera longa com motivo e valor economizado) -->
+<!-- DASHBOARD-VERSAO: 2026-11-24-economia-fora-expediente (SLA em horario util, espera longa com motivo e valor economizado) -->
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
@@ -393,6 +393,25 @@ function custoRecepcionista() {
   const mensal = remuneracao + encargos;
   return { mensal, encargos, remuneracao, hora: mensal / r.horasMes };
 }
+/* Horas com a clínica fechada entre dois instantes (horário local do navegador = Brasília).
+   Aberta: seg a qui 07:30-17:30, sex 07:30-16:30. Fora disso (noites, sábado, domingo) o agente atende sozinho. */
+function horasForaExpediente(ini, fim) {
+  if (!(fim > ini)) return { fora: 0, total: 0 };
+  let aberto = 0;
+  const d = new Date(ini.getFullYear(), ini.getMonth(), ini.getDate());
+  while (d < fim) {
+    const dow = d.getDay(); // 0 dom ... 6 sab
+    if (dow >= 1 && dow <= 5) {
+      const abre = new Date(d); abre.setHours(7, 30, 0, 0);
+      const fecha = new Date(d); if (dow === 5) fecha.setHours(16, 30, 0, 0); else fecha.setHours(17, 30, 0, 0);
+      const a = Math.max(abre, ini), b = Math.min(fecha, fim);
+      if (b > a) aberto += (b - a);
+    }
+    d.setDate(d.getDate() + 1);
+  }
+  const total = fim - ini;
+  return { fora: (total - aberto) / 3600000, total: total / 3600000 };
+}
 function brl(v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }); }
 
 let chartHorarios = null;
@@ -513,9 +532,13 @@ function renderizar(d, inicio, fim) {
     : `${r.tempo_agente_minutos || 0}min`;
 
   // Valor economizado: horas trabalhadas pelo agente × custo por hora de uma recepcionista
-  const horasAgente = (parseFloat(r.tempo_agente_horas) || 0) + (parseFloat(r.tempo_agente_minutos) || 0) / 60;
+  // 24/11: valor economizado = horas com a clínica fechada no período (até agora) × custo por hora de uma recepcionista
+  const iniPeriodo = new Date(inicio.slice(0, 10) + 'T00:00:00');
+  const fimPeriodo = new Date(Math.min(new Date(fim.slice(0, 10) + 'T23:59:59'), new Date()));
+  const cobertura = horasForaExpediente(iniPeriodo, fimPeriodo);
   const custo = custoRecepcionista();
-  const eco = { custo, valor: horasAgente * custo.hora, cobertura247: custo.mensal * (168 / 44) };
+  const eco = { custo, horas: cobertura.fora, valor: cobertura.fora * custo.hora };
+  const horasFmt = h => { const t = Math.round(h * 60); return `${Math.floor(t / 60)}h${t % 60 ? ' ' + (t % 60) + 'min' : ''}`; };
 
   const kpi = (cor, ic, valor, label, detalhe) => `
       <div class="card kpi ${cor}">
@@ -534,12 +557,12 @@ function renderizar(d, inicio, fim) {
       ${kpi('vermelho', 'i-fila', r.pendentes || 0, 'Aguardando atendimento', 'na fila atual')}
     </div>
 
-    <div class="secao"><h2>Economia com o agente</h2><p>Comparado a pagar uma recepcionista pelas mesmas horas</p></div>
+    <div class="secao"><h2>Economia com o agente</h2><p>O agente atende quando a clínica está fechada: noites e fins de semana</p></div>
     <div class="card economia">
       <div class="eco-destaque">
         <span class="rot">Valor economizado no período</span>
         <span class="val num">${brl(eco.valor)}</span>
-        <span class="det">${tempoStr} de trabalho do agente, que atende 24 horas por dia, 7 dias por semana.<br>Para cobrir 24 h todos os dias com pessoas seriam cerca de 4 recepcionistas: ${brl(eco.cobertura247)} por mês.</span>
+        <span class="det">${horasFmt(eco.horas)} com a clínica fechada no período, em que o agente atendeu sozinho.<br>É quanto custaria ter uma recepcionista no WhatsApp nesses horários.</span>
       </div>
       <div class="eco-conta">
         <div class="eco-linha"><span>Salário de recepcionista com experiência (média em Florianópolis)</span><b class="num">${brl(RECEPCIONISTA.salario)}</b></div>
@@ -547,8 +570,9 @@ function renderizar(d, inicio, fim) {
         <div class="eco-linha"><span>FGTS 8% + INSS patronal, RAT e terceiros (27,8%)</span><b class="num">${brl(eco.custo.encargos)}</b></div>
         <div class="eco-linha"><span>Custo mensal para a clínica</span><b class="num">${brl(eco.custo.mensal)}</b></div>
         <div class="eco-linha"><span>Custo por hora (220 h/mês)</span><b class="num">${eco.custo.hora.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</b></div>
-        <div class="eco-linha total"><span>Horas do agente × custo por hora</span><b class="num">${brl(eco.valor)}</b></div>
-        <div class="eco-nota">Conta conservadora: não inclui vale-transporte, vale-refeição, plano de saúde nem adicional noturno. Piso estadual de SC para saúde em 2026: R$ 2.106,00.</div>
+        <div class="eco-linha"><span>Horas com a clínica fechada no período</span><b class="num">${horasFmt(eco.horas)}</b></div>
+        <div class="eco-linha total"><span>Horas com a clínica fechada × custo por hora</span><b class="num">${brl(eco.valor)}</b></div>
+        <div class="eco-nota">Horário da clínica: seg a qui 7h30 às 17h30, sex 7h30 às 16h30. Conta conservadora: não inclui vale-transporte, vale-refeição, plano de saúde nem adicional noturno. Piso estadual de SC para saúde em 2026: R$ 2.106,00.</div>
       </div>
     </div>
 
