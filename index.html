@@ -2016,9 +2016,9 @@ function normalizarDataConfirmacao(valor, hoje, livre) {
   const DIA = 86400000;
   if (dt < h0) {
     const recente = (h0 - dt) <= 90 * DIA;
-    if (livre && recente) return { data: a ? `${p(d)}/${p(m)}/${ano}` : `${p(d)}/${p(m)}` };   // data passada citada na conversa
+    if (livre && recente) return { data: a ? `${p(d)}/${p(m)}/${ano}` : `${p(d)}/${p(m)}`, passada: `${p(d)}/${p(m)}/${ano}` };   // data passada citada na conversa
     if (!a) { ano++; dt = new Date(ano, m - 1, d); }                                          // sem ano: é do ano que vem
-    else if (livre) return { data: `${p(d)}/${p(m)}/${ano}` };                                // data antiga citada na conversa
+    else if (livre) return { data: `${p(d)}/${p(m)}/${ano}`, passada: `${p(d)}/${p(m)}/${ano}` }; // data antiga citada na conversa
     else return { erro: 'essa data já passou' };
   }
   return { data: `${p(d)}/${p(m)}/${ano} (${DIAS_SEMANA_CONF[dt.getDay()]})` };
@@ -2034,6 +2034,7 @@ function conferirMensagemConfirmacao(texto, hoje) {
     linhas[iData] = `📅 Data: ${res.data}`;
   }
   let erro = null;
+  const passadas = [];   // 25/11: datas que já passaram citadas no texto (a atendente confirma antes de enviar)
   const SEMANA = /^\s*\((domingo|segunda|terça|quarta|quinta|sexta|sábado)/i;
   const trocar = (inteiro, prefixo, valor, pos, tudo) => {
     if (erro) return inteiro;
@@ -2041,6 +2042,7 @@ function conferirMensagemConfirmacao(texto, hoje) {
     if (SEMANA.test(depois)) return inteiro;                       // já tem o dia da semana
     const res = normalizarDataConfirmacao(valor, hoje, true);
     if (res.erro) { erro = `Data "${valor}": ${res.erro}. A mensagem não foi enviada.`; return inteiro; }
+    if (res.passada && !passadas.includes(res.passada)) passadas.push(res.passada);
     return prefixo + res.data;
   };
   let saida = linhas.map((l, i) => {
@@ -2054,7 +2056,7 @@ function conferirMensagemConfirmacao(texto, hoje) {
     return l;
   }).join('\n');
   if (erro) return { erro };
-  return { texto: saida };
+  return { texto: saida, passadas };
 }
 
 async function enviarMensagemChat() {
@@ -2067,6 +2069,14 @@ async function enviarMensagemChat() {
   // 23/11: confere as datas da mensagem (ex.: "dia 2112" vira "dia 21/12/2026 (segunda-feira)").
   const conferida = conferirMensagemConfirmacao(texto);
   if (conferida.erro) { mostrarToast(conferida.erro, 'erro', 8000); input.focus(); return; }
+  // 25/11: a mensagem cita uma data que já passou (caso João Vicente: "disponibilidade para 09/11/2026").
+  // Não bloqueia (pode ser a consulta que o paciente perdeu), mas a atendente confirma antes de enviar.
+  if (conferida.passadas && conferida.passadas.length) {
+    const hojeTxt = new Date().toLocaleDateString('pt-BR');
+    const lista = conferida.passadas.join(', ');
+    const ok = confirm(`Atenção: a mensagem cita ${conferida.passadas.length > 1 ? 'as datas' : 'a data'} ${lista}, que já ${conferida.passadas.length > 1 ? 'passaram' : 'passou'} (hoje é ${hojeTxt}).\n\nConfira com o paciente se é isso mesmo.\n\nOK = enviar assim mesmo\nCancelar = voltar e corrigir`);
+    if (!ok) { input.focus(); return; }
+  }
   texto = conferida.texto;
 
   _enviandoMensagem = true;
